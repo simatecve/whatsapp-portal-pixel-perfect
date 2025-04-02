@@ -9,29 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      configuracion_sistema: {
+        Row: {
+          descripcion_login: string
+          descripcion_registro: string
+          fecha_actualizacion: string
+          fecha_creacion: string
+          id: string
+          logo_url: string | null
+          nombre_sistema: string
+          texto_bienvenida_login: string
+          texto_bienvenida_registro: string
+        }
+        Insert: {
+          descripcion_login?: string
+          descripcion_registro?: string
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          id?: string
+          logo_url?: string | null
+          nombre_sistema?: string
+          texto_bienvenida_login?: string
+          texto_bienvenida_registro?: string
+        }
+        Update: {
+          descripcion_login?: string
+          descripcion_registro?: string
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          id?: string
+          logo_url?: string | null
+          nombre_sistema?: string
+          texto_bienvenida_login?: string
+          texto_bienvenida_registro?: string
+        }
+        Relationships: []
+      }
       perfiles: {
         Row: {
+          codigo_pais: string | null
           fecha_actualizacion: string
           fecha_creacion: string
           id: string
           nombre_completo: string | null
           nombre_empresa: string | null
+          numero_telefono: string | null
           url_avatar: string | null
         }
         Insert: {
+          codigo_pais?: string | null
           fecha_actualizacion?: string
           fecha_creacion?: string
           id: string
           nombre_completo?: string | null
           nombre_empresa?: string | null
+          numero_telefono?: string | null
           url_avatar?: string | null
         }
         Update: {
+          codigo_pais?: string | null
           fecha_actualizacion?: string
           fecha_creacion?: string
           id?: string
           nombre_completo?: string | null
           nombre_empresa?: string | null
+          numero_telefono?: string | null
           url_avatar?: string | null
         }
         Relationships: []

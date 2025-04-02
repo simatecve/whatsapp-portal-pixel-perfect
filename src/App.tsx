@@ -12,7 +12,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Convert to a proper React functional component
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -21,11 +20,12 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Redirigir la página de inicio al login */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* AÑADE TODAS LAS RUTAS PERSONALIZADAS ARRIBA DE LA RUTA CATCH-ALL "*" */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

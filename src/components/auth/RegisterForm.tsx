@@ -1,26 +1,52 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, Eye, EyeOff, Building } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Building, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import CountrySelect from './CountrySelect';
 
 const RegisterForm: React.FC = () => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [empresa, setEmpresa] = useState('');
+  const [codigoPais, setCodigoPais] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [configSistema, setConfigSistema] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Cargar configuración del sistema desde la base de datos
+  useEffect(() => {
+    const cargarConfiguracion = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('configuracion_sistema')
+          .select('*')
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setConfigSistema(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar configuración:", error);
+      }
+    };
+    
+    cargarConfiguracion();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +72,29 @@ const RegisterForm: React.FC = () => {
     
     setIsLoading(true);
 
+    // Obtener el prefijo telefónico según el código de país
+    const getPrefijo = () => {
+      const paises = [
+        { codigo: "AR", prefijo: "+54" }, { codigo: "BO", prefijo: "+591" }, 
+        { codigo: "BR", prefijo: "+55" }, { codigo: "CL", prefijo: "+56" }, 
+        { codigo: "CO", prefijo: "+57" }, { codigo: "CR", prefijo: "+506" },
+        { codigo: "CU", prefijo: "+53" }, { codigo: "EC", prefijo: "+593" },
+        { codigo: "SV", prefijo: "+503" }, { codigo: "ES", prefijo: "+34" },
+        { codigo: "US", prefijo: "+1" }, { codigo: "GT", prefijo: "+502" },
+        { codigo: "HN", prefijo: "+504" }, { codigo: "MX", prefijo: "+52" },
+        { codigo: "NI", prefijo: "+505" }, { codigo: "PA", prefijo: "+507" },
+        { codigo: "PY", prefijo: "+595" }, { codigo: "PE", prefijo: "+51" },
+        { codigo: "PR", prefijo: "+1" }, { codigo: "DO", prefijo: "+1" },
+        { codigo: "UY", prefijo: "+598" }, { codigo: "VE", prefijo: "+58" },
+        { codigo: "DE", prefijo: "+49" }, { codigo: "FR", prefijo: "+33" },
+        { codigo: "IT", prefijo: "+39" }, { codigo: "GB", prefijo: "+44" },
+        { codigo: "JP", prefijo: "+81" }, { codigo: "CN", prefijo: "+86" },
+        { codigo: "IN", prefijo: "+91" }, { codigo: "AU", prefijo: "+61" },
+        { codigo: "CA", prefijo: "+1" }, { codigo: "ZA", prefijo: "+27" }
+      ];
+      return paises.find(p => p.codigo === codigoPais)?.prefijo || "";
+    };
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -53,13 +102,29 @@ const RegisterForm: React.FC = () => {
         options: {
           data: {
             nombre_completo: nombre,
-            nombre_empresa: empresa
+            nombre_empresa: empresa,
+            codigo_pais: codigoPais,
+            numero_telefono: telefono
           }
         }
       });
 
       if (error) {
         throw error;
+      }
+
+      // También actualizamos directamente la tabla de perfiles para asegurarnos
+      // que se guardan todos los campos (por si el trigger no funciona correctamente)
+      if (data.user) {
+        await supabase
+          .from('perfiles')
+          .upsert({
+            id: data.user.id,
+            nombre_completo: nombre,
+            nombre_empresa: empresa,
+            codigo_pais: codigoPais,
+            numero_telefono: telefono
+          });
       }
 
       toast({
@@ -90,8 +155,12 @@ const RegisterForm: React.FC = () => {
   return (
     <div className="w-full max-w-md space-y-6 p-8 bg-white rounded-xl shadow-lg animate-fade-in">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Crear una cuenta</h2>
-        <p className="text-sm text-gray-500 mt-2">Comienza a gestionar tu API de WhatsApp</p>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {configSistema ? "Crear una cuenta en " + configSistema.nombre_sistema : "Crear una cuenta"}
+        </h2>
+        <p className="text-sm text-gray-500 mt-2">
+          {configSistema?.descripcion_registro || "Comience a gestionar su API de WhatsApp"}
+        </p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -145,6 +214,32 @@ const RegisterForm: React.FC = () => {
               onChange={(e) => setEmpresa(e.target.value)}
               className="pl-10"
             />
+          </div>
+        </div>
+        
+        {/* Nuevo campo para número de teléfono con selector de país */}
+        <div className="space-y-2">
+          <Label htmlFor="telefono" className="text-sm font-medium">Número de Teléfono</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="md:col-span-1">
+              <CountrySelect 
+                value={codigoPais}
+                onChange={setCodigoPais}
+              />
+            </div>
+            <div className="md:col-span-2 relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Phone className="h-5 w-5 text-gray-400" />
+              </div>
+              <Input 
+                id="telefono" 
+                type="tel" 
+                placeholder="612345678" 
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
         </div>
         

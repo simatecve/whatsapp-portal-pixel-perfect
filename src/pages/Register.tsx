@@ -1,9 +1,41 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import RegisterForm from '@/components/auth/RegisterForm';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register: React.FC = () => {
+  const [configSistema, setConfigSistema] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const cargarConfiguracion = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('configuracion_sistema')
+          .select('*')
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setConfigSistema(data);
+          document.title = `Registro | ${data.nombre_sistema}`;
+        }
+      } catch (error) {
+        console.error("Error al cargar configuración:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    cargarConfiguracion();
+  }, []);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left side - Image/Banner for larger screens, will be bottom on mobile */}
@@ -14,9 +46,11 @@ const Register: React.FC = () => {
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-10">
           <div className="max-w-md text-center">
-            <h2 className="text-3xl font-bold mb-6">Comience con nuestra plataforma API de WhatsApp</h2>
+            <h2 className="text-3xl font-bold mb-6">
+              {configSistema?.texto_bienvenida_registro || "Comience con nuestra plataforma API de WhatsApp"}
+            </h2>
             <p className="mb-8 text-lg">
-              Desbloquee el poder de WhatsApp para su negocio con nuestra solución API completa.
+              {configSistema?.descripcion_registro || "Desbloquee el poder de WhatsApp para su negocio con nuestra solución API completa."}
             </p>
             <div className="grid grid-cols-1 gap-6">
               <div className="flex items-center space-x-4 bg-white bg-opacity-10 p-4 rounded-lg">
@@ -58,7 +92,7 @@ const Register: React.FC = () => {
           </div>
         </div>
         <div className="absolute bottom-4 right-4 text-white text-opacity-70 text-sm">
-          © 2024 WhatsAPI. Todos los derechos reservados.
+          © {new Date().getFullYear()} {configSistema?.nombre_sistema || "WhatsAPI"}. Todos los derechos reservados.
         </div>
       </div>
       
@@ -67,11 +101,19 @@ const Register: React.FC = () => {
         <div className="w-full max-w-md">
           <div className="mb-8">
             <Link to="/" className="flex items-center">
-              <svg className="w-8 h-8 text-whatsapp" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
-                <path d="M12 6L11.06 11.06L6 12L11.06 12.94L12 18L12.94 12.94L18 12L12.94 11.06L12 6Z" />
-              </svg>
-              <span className="ml-2 text-xl font-bold">WhatsAPI</span>
+              {configSistema?.logo_url ? (
+                <img 
+                  src={configSistema.logo_url} 
+                  alt={configSistema.nombre_sistema} 
+                  className="h-10 w-auto"
+                />
+              ) : (
+                <svg className="w-8 h-8 text-whatsapp" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
+                  <path d="M12 6L11.06 11.06L6 12L11.06 12.94L12 18L12.94 12.94L18 12L12.94 11.06L12 6Z" />
+                </svg>
+              )}
+              <span className="ml-2 text-xl font-bold">{configSistema?.nombre_sistema || "WhatsAPI"}</span>
             </Link>
           </div>
           <RegisterForm />
