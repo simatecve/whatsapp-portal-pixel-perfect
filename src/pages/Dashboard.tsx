@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
   
   // En el futuro, esto estaría conectado a la autenticación de Supabase
   const isAuthenticated = true; // Placeholder para verificación de autenticación
@@ -38,29 +39,39 @@ const Dashboard: React.FC = () => {
       navigate('/login');
     }
     
-    // Obtener datos del usuario actual
-    const fetchUserData = async () => {
+    // Obtener datos del usuario actual y configuración del sistema
+    const fetchData = async () => {
       try {
+        // Obtener usuario
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
         
         if (user) {
+          // Obtener perfil del usuario
           const { data: profileData } = await supabase
             .from('perfiles')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
           
           setProfile(profileData);
         }
+        
+        // Obtener configuración del sistema
+        const { data: configData } = await supabase
+          .from('configuracion_sistema')
+          .select('*')
+          .maybeSingle();
+          
+        setSystemConfig(configData);
       } catch (error) {
-        console.error('Error al obtener datos del usuario:', error);
+        console.error('Error al obtener datos:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchUserData();
+    fetchData();
   }, [isAuthenticated, navigate]);
 
   const handleLogout = async () => {
@@ -79,7 +90,9 @@ const Dashboard: React.FC = () => {
                 <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
                 <path d="M12 6L11.06 11.06L6 12L11.06 12.94L12 18L12.94 12.94L18 12L12.94 11.06L12 6Z" />
               </svg>
-              <span className="ml-2 text-xl font-bold">WhatsAPI</span>
+              <span className="ml-2 text-xl font-bold">
+                {systemConfig?.nombre_sistema || 'WhatsAPI'}
+              </span>
             </div>
             
             {/* Información del usuario */}
@@ -92,6 +105,9 @@ const Dashboard: React.FC = () => {
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{profile.nombre_completo || 'Usuario'}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    {profile.nombre_empresa && (
+                      <p className="text-xs text-muted-foreground">{profile.nombre_empresa}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -166,7 +182,9 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center h-16">
                 <div className="flex items-center">
                   <SidebarTrigger className="mr-2" />
-                  <span className="text-xl font-semibold">Panel de Control</span>
+                  <span className="text-xl font-semibold">
+                    {systemConfig ? `Panel de Control - ${systemConfig.nombre_sistema}` : 'Panel de Control'}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none">
@@ -187,7 +205,7 @@ const Dashboard: React.FC = () => {
             <div className="px-4 py-6 sm:px-0">
               <h1 className="text-2xl font-semibold text-gray-900">Panel de Control</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Bienvenido a su panel de administración de WhatsAPI.
+                Bienvenido a su panel de administración de {systemConfig?.nombre_sistema || 'WhatsAPI'}.
               </p>
             </div>
             
