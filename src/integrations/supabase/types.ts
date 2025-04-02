@@ -78,6 +78,54 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          api_key: string
+          api_url: string
+          id: string
+          webhook_url: string
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          id?: string
+          webhook_url: string
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          id?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
+      whatsapp_sesiones: {
+        Row: {
+          estado: string | null
+          fecha_actualizacion: string
+          fecha_creacion: string
+          id: string
+          nombre_sesion: string
+          user_id: string
+        }
+        Insert: {
+          estado?: string | null
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          id?: string
+          nombre_sesion: string
+          user_id: string
+        }
+        Update: {
+          estado?: string | null
+          fecha_actualizacion?: string
+          fecha_creacion?: string
+          id?: string
+          nombre_sesion?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
