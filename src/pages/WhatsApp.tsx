@@ -155,24 +155,8 @@ const WhatsApp: React.FC = () => {
     setIsCreatingSession(true);
     
     try {
-      // Crear registro en la base de datos
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('whatsapp_sesiones')
-        .insert([
-          { 
-            nombre_sesion: newSessionName, 
-            user_id: user?.id,
-            estado: 'INICIANDO'
-          }
-        ])
-        .select('*')
-        .maybeSingle();
-      
-      if (sessionError) {
-        throw new Error(sessionError.message);
-      }
-      
-      // Llamar a la API para iniciar la sesión
+      // CAMBIO PRINCIPAL: Primero llamar a la API para iniciar la sesión
+      console.log("Llamando a la API para iniciar sesión...");
       const response = await fetch(`${whatsappConfig.api_url}/api/sessions/default/start`, {
         method: 'POST',
         headers: {
@@ -182,11 +166,28 @@ const WhatsApp: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`Error al iniciar sesión: ${response.statusText}`);
+        throw new Error(`Error al iniciar sesión en la API: ${response.statusText}`);
       }
       
       const result = await response.json();
-      console.log('Sesión iniciada:', result);
+      console.log('Respuesta de la API al iniciar sesión:', result);
+      
+      // Ahora crear el registro en la base de datos
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('whatsapp_sesiones')
+        .insert([
+          { 
+            nombre_sesion: newSessionName, 
+            user_id: user?.id,
+            estado: result.status || 'INICIANDO'
+          }
+        ])
+        .select('*')
+        .maybeSingle();
+      
+      if (sessionError) {
+        throw new Error(sessionError.message);
+      }
       
       // Obtener el código QR
       const qrResponse = await fetch(`${whatsappConfig.api_url}/api/default/auth/qr?format=image`, {
