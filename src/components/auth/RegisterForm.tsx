@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Building } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const RegisterForm: React.FC = () => {
-  const [name, setName] = useState('');
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [empresa, setEmpresa] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -23,11 +25,11 @@ const RegisterForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate passwords match
+    // Validar contraseñas
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
+        title: "Las contraseñas no coinciden",
+        description: "Por favor, asegúrate de que tus contraseñas coinciden.",
         variant: "destructive",
       });
       return;
@@ -35,8 +37,8 @@ const RegisterForm: React.FC = () => {
     
     if (!acceptedTerms) {
       toast({
-        title: "Terms & Conditions",
-        description: "Please accept the terms and conditions to continue.",
+        title: "Términos y condiciones",
+        description: "Por favor, acepta los términos y condiciones para continuar.",
         variant: "destructive",
       });
       return;
@@ -45,25 +47,34 @@ const RegisterForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // In the future, this will be connected to Supabase
-      console.log("Registration attempt with:", { name, email, password });
-      
-      // Simulate registration success
-      setTimeout(() => {
-        toast({
-          title: "Account created!",
-          description: "Your account has been successfully created.",
-        });
-        navigate('/dashboard');
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Registration error:", error);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nombre_completo: nombre,
+            nombre_empresa: empresa
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
-        title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        title: "¡Cuenta creada!",
+        description: "Tu cuenta ha sido creada exitosamente.",
+      });
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error("Error de registro:", error);
+      toast({
+        title: "Error de registro",
+        description: error.message || "Hubo un error al crear tu cuenta. Por favor, inténtalo de nuevo.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -79,23 +90,23 @@ const RegisterForm: React.FC = () => {
   return (
     <div className="w-full max-w-md space-y-6 p-8 bg-white rounded-xl shadow-lg animate-fade-in">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Create an account</h2>
-        <p className="text-sm text-gray-500 mt-2">Start managing your WhatsApp API</p>
+        <h2 className="text-2xl font-bold text-gray-900">Crear una cuenta</h2>
+        <p className="text-sm text-gray-500 mt-2">Comienza a gestionar tu API de WhatsApp</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+          <Label htmlFor="nombre" className="text-sm font-medium">Nombre Completo</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User className="h-5 w-5 text-gray-400" />
             </div>
             <Input 
-              id="name" 
+              id="nombre" 
               type="text" 
-              placeholder="John Doe" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="Juan Pérez" 
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               className="pl-10"
               required
             />
@@ -103,7 +114,7 @@ const RegisterForm: React.FC = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Correo Electrónico</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Mail className="h-5 w-5 text-gray-400" />
@@ -111,7 +122,7 @@ const RegisterForm: React.FC = () => {
             <Input 
               id="email" 
               type="email" 
-              placeholder="name@company.com" 
+              placeholder="nombre@empresa.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
@@ -119,9 +130,26 @@ const RegisterForm: React.FC = () => {
             />
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="empresa" className="text-sm font-medium">Nombre de Empresa</Label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Building className="h-5 w-5 text-gray-400" />
+            </div>
+            <Input 
+              id="empresa" 
+              type="text" 
+              placeholder="Mi Empresa S.A." 
+              value={empresa}
+              onChange={(e) => setEmpresa(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+          <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
@@ -149,7 +177,7 @@ const RegisterForm: React.FC = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
+          <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Contraseña</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
@@ -186,13 +214,13 @@ const RegisterForm: React.FC = () => {
             htmlFor="terms"
             className="text-sm text-gray-500 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            I agree to the{" "}
+            Acepto los{" "}
             <Link to="/terms" className="text-whatsapp hover:underline">
-              Terms of Service
+              Términos de Servicio
             </Link>
-            {" "}and{" "}
+            {" "}y la{" "}
             <Link to="/privacy" className="text-whatsapp hover:underline">
-              Privacy Policy
+              Política de Privacidad
             </Link>
           </label>
         </div>
@@ -202,15 +230,15 @@ const RegisterForm: React.FC = () => {
           className="w-full bg-whatsapp hover:bg-whatsapp-dark font-medium"
           disabled={isLoading}
         >
-          {isLoading ? "Creating Account..." : "Create Account"}
+          {isLoading ? "Creando Cuenta..." : "Crear Cuenta"}
         </Button>
       </form>
       
       <div className="text-center text-sm">
         <p className="text-gray-500">
-          Already have an account?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <Link to="/login" className="text-whatsapp font-medium hover:underline">
-            Sign in
+            Iniciar sesión
           </Link>
         </p>
       </div>

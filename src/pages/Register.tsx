@@ -14,9 +14,9 @@ const Register: React.FC = () => {
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-10">
           <div className="max-w-md text-center">
-            <h2 className="text-3xl font-bold mb-6">Get started with our WhatsApp API platform</h2>
+            <h2 className="text-3xl font-bold mb-6">Comience con nuestra plataforma API de WhatsApp</h2>
             <p className="mb-8 text-lg">
-              Unlock the power of WhatsApp for your business with our comprehensive API solution.
+              Desbloquee el poder de WhatsApp para su negocio con nuestra solución API completa.
             </p>
             <div className="grid grid-cols-1 gap-6">
               <div className="flex items-center space-x-4 bg-white bg-opacity-10 p-4 rounded-lg">
@@ -27,8 +27,8 @@ const Register: React.FC = () => {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-bold">Quick Setup</h3>
-                  <p className="text-sm opacity-80">Be up and running in minutes with our guided setup</p>
+                  <h3 className="font-bold">Configuración Rápida</h3>
+                  <p className="text-sm opacity-80">Esté listo en minutos con nuestra configuración guiada</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4 bg-white bg-opacity-10 p-4 rounded-lg">
@@ -38,8 +38,8 @@ const Register: React.FC = () => {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-bold">Free Trial</h3>
-                  <p className="text-sm opacity-80">Start with our free tier and upgrade as you grow</p>
+                  <h3 className="font-bold">Prueba Gratuita</h3>
+                  <p className="text-sm opacity-80">Comience con nuestro nivel gratuito y actualice a medida que crece</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4 bg-white bg-opacity-10 p-4 rounded-lg">
@@ -50,15 +50,15 @@ const Register: React.FC = () => {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-bold">24/7 Support</h3>
-                  <p className="text-sm opacity-80">Get help anytime you need with our expert support</p>
+                  <h3 className="font-bold">Soporte 24/7</h3>
+                  <p className="text-sm opacity-80">Obtenga ayuda en cualquier momento con nuestro soporte experto</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div className="absolute bottom-4 right-4 text-white text-opacity-70 text-sm">
-          © 2023 WhatsAPI. All rights reserved.
+          © 2024 WhatsAPI. Todos los derechos reservados.
         </div>
       </div>
       

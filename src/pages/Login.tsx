@@ -30,32 +30,32 @@ const Login: React.FC = () => {
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-10">
           <div className="max-w-md text-center">
-            <h2 className="text-3xl font-bold mb-6">Manage WhatsApp communications efficiently</h2>
+            <h2 className="text-3xl font-bold mb-6">Gestione sus comunicaciones de WhatsApp eficientemente</h2>
             <p className="mb-8 text-lg">
-              Connect with your customers instantly using our WhatsApp API management platform.
+              Conéctese con sus clientes al instante utilizando nuestra plataforma de gestión de API de WhatsApp.
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white bg-opacity-10 rounded-lg">
-                <h3 className="font-bold mb-1">Easy Integration</h3>
-                <p className="text-sm">Integrate with your existing systems seamlessly</p>
+                <h3 className="font-bold mb-1">Integración Simple</h3>
+                <p className="text-sm">Integre con sus sistemas existentes sin problemas</p>
               </div>
               <div className="p-4 bg-white bg-opacity-10 rounded-lg">
-                <h3 className="font-bold mb-1">Advanced Analytics</h3>
-                <p className="text-sm">Track and optimize your messaging campaigns</p>
+                <h3 className="font-bold mb-1">Análisis Avanzado</h3>
+                <p className="text-sm">Rastree y optimice sus campañas de mensajería</p>
               </div>
               <div className="p-4 bg-white bg-opacity-10 rounded-lg">
-                <h3 className="font-bold mb-1">Automation</h3>
-                <p className="text-sm">Set up automated responses and workflows</p>
+                <h3 className="font-bold mb-1">Automatización</h3>
+                <p className="text-sm">Configure respuestas automáticas y flujos de trabajo</p>
               </div>
               <div className="p-4 bg-white bg-opacity-10 rounded-lg">
-                <h3 className="font-bold mb-1">Security</h3>
-                <p className="text-sm">Enterprise-grade security for your data</p>
+                <h3 className="font-bold mb-1">Seguridad</h3>
+                <p className="text-sm">Seguridad de nivel empresarial para sus datos</p>
               </div>
             </div>
           </div>
         </div>
         <div className="absolute bottom-4 right-4 text-white text-opacity-70 text-sm">
-          © 2023 WhatsAPI. All rights reserved.
+          © 2024 WhatsAPI. Todos los derechos reservados.
         </div>
       </div>
     </div>
