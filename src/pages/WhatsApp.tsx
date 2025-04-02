@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, QrCode, Code, Trash2, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,8 @@ import SidebarNavigation from '@/components/dashboard/SidebarNavigation';
 import SidebarLogo from '@/components/dashboard/SidebarLogo';
 import UserProfilePanel from '@/components/dashboard/UserProfilePanel';
 import TopNavbar from '@/components/dashboard/TopNavbar';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface WhatsAppSession {
   id: string;
@@ -59,6 +60,16 @@ interface UserProfile {
   [key: string]: any;
 }
 
+interface SessionStatus {
+  status: string;
+  message: string;
+  user?: {
+    name: string;
+    number: string;
+    [key: string]: any;
+  };
+}
+
 const WhatsApp: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -73,6 +84,8 @@ const WhatsApp: React.FC = () => {
   const [newSessionName, setNewSessionName] = useState('');
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Verificación de autenticación y carga de datos
   useEffect(() => {
@@ -103,6 +116,11 @@ const WhatsApp: React.FC = () => {
             console.error('Error al obtener sesiones:', sessionsError);
           } else {
             setSessions(sessionsData as WhatsAppSession[] || []);
+            
+            // Verificar estado de cada sesión con la API
+            if (sessionsData && sessionsData.length > 0) {
+              await checkSessionsStatus(sessionsData as WhatsAppSession[]);
+            }
           }
           
           // Obtener configuración de WhatsApp
@@ -136,6 +154,51 @@ const WhatsApp: React.FC = () => {
     
     fetchData();
   }, [navigate]);
+
+  // Verificar el estado de las sesiones
+  const checkSessionsStatus = async (sessionsToCheck: WhatsAppSession[]) => {
+    if (!whatsappConfig) return;
+
+    try {
+      setRefreshing(true);
+      
+      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/default`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'X-Api-Key': whatsappConfig.api_key
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Error al verificar estado de sesión:', response.statusText);
+        return;
+      }
+      
+      const result = await response.json() as SessionStatus;
+      
+      // Actualizar el estado en la base de datos
+      const updatedSessions = [...sessions];
+      const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
+      
+      for (const session of updatedSessions) {
+        if (session.estado !== apiStatus) {
+          await supabase
+            .from('whatsapp_sesiones')
+            .update({ estado: apiStatus })
+            .eq('id', session.id);
+            
+          session.estado = apiStatus;
+        }
+      }
+      
+      setSessions(updatedSessions);
+    } catch (error) {
+      console.error('Error al verificar el estado de las sesiones:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -237,6 +300,86 @@ const WhatsApp: React.FC = () => {
     }
   };
 
+  const handleConnectQR = async (sessionId: string) => {
+    if (!whatsappConfig) return;
+
+    setSelectedSessionId(sessionId);
+    setIsCreatingSession(true);
+    
+    try {
+      // Obtener el código QR
+      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/default/auth/qr?format=image`, {
+        method: 'GET',
+        headers: {
+          'accept': 'image/png',
+          'X-Api-Key': whatsappConfig.api_key
+        }
+      });
+      
+      if (!qrResponse.ok) {
+        throw new Error(`Error al obtener el código QR: ${qrResponse.statusText}`);
+      }
+      
+      const blob = await qrResponse.blob();
+      const qrImageUrl = URL.createObjectURL(blob);
+      setQrCodeImage(qrImageUrl);
+      
+      // Mostrar el modal de QR
+      setShowQrModal(true);
+    } catch (error) {
+      console.error('Error al obtener el código QR:', error);
+      toast({
+        title: "Error",
+        description: `Error al obtener el código QR: ${error instanceof Error ? error.message : 'Desconocido'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingSession(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('whatsapp_sesiones')
+        .delete()
+        .eq('id', sessionId);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Actualizar la lista de sesiones
+      setSessions(sessions.filter(session => session.id !== sessionId));
+      
+      toast({
+        title: "Sesión eliminada",
+        description: "La sesión ha sido eliminada correctamente",
+      });
+    } catch (error) {
+      console.error('Error al eliminar la sesión:', error);
+      toast({
+        title: "Error",
+        description: `Error al eliminar la sesión: ${error instanceof Error ? error.message : 'Desconocido'}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConnectComplete = async () => {
+    setShowQrModal(false);
+    
+    // Verificar el estado de la sesión después de un breve retraso
+    setTimeout(async () => {
+      await checkSessionsStatus(sessions);
+    }, 2000);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-gray-50">
@@ -266,51 +409,78 @@ const WhatsApp: React.FC = () => {
           
           <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
-              <h1 className="text-2xl font-semibold text-gray-900">WhatsApp</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Gestione sus conexiones de WhatsApp para {systemConfig?.nombre_sistema || 'el sistema'}.
-              </p>
-            </div>
-            
-            {/* Botón para crear nueva sesión */}
-            <div className="px-4 sm:px-0 mb-6">
-              <Button 
-                onClick={() => setModalOpen(true)}
-                className="flex items-center"
-                disabled={isCreatingSession}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Conectar WhatsApp
-              </Button>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900">WhatsApp</h1>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Gestione sus conexiones de WhatsApp para {systemConfig?.nombre_sistema || 'el sistema'}.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => setModalOpen(true)}
+                  className="flex items-center"
+                  disabled={isCreatingSession}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Conectar WhatsApp
+                </Button>
+              </div>
             </div>
             
             {/* Cuadrícula de sesiones */}
-            <div className="px-4 sm:px-0">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="px-4 sm:px-0 mt-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sessions.length > 0 ? (
                   sessions.map((session) => (
-                    <Card key={session.id} className="hover:shadow-md transition-shadow duration-200">
+                    <Card key={session.id} className="hover:shadow-md transition-shadow duration-200 border">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{session.nombre_sesion}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm text-gray-500">
-                          <div className="flex justify-between items-center">
-                            <span>Estado:</span>
-                            <span className={
-                              session.estado === 'CONECTADO' ? 'text-green-600 font-medium' : 
-                              session.estado === 'PENDIENTE' ? 'text-yellow-600 font-medium' : 
-                              session.estado === 'ERROR' ? 'text-red-600 font-medium' :
-                              'text-blue-600 font-medium'
-                            }>
-                              {session.estado || 'PENDIENTE'}
-                            </span>
-                          </div>
-                          <div className="mt-2">
-                            <span className="text-xs">Creado: {new Date(session.fecha_creacion).toLocaleDateString()}</span>
-                          </div>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg">{session.nombre_sesion}</CardTitle>
+                          <Badge 
+                            variant={session.estado === 'CONECTADO' ? 'success' : 'destructive'}
+                            className={
+                              session.estado === 'CONECTADO' 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-100' 
+                                : 'bg-red-100 text-red-800 hover:bg-red-100'
+                            }
+                          >
+                            {session.estado === 'CONECTADO' ? 'Conectado' : 'Desconectado'}
+                          </Badge>
                         </div>
-                      </CardContent>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Creado el: {formatDate(session.fecha_creacion)}
+                        </p>
+                      </CardHeader>
+                      <CardFooter className="pt-2 pb-4 flex flex-wrap gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                          onClick={() => handleConnectQR(session.id)}
+                        >
+                          <QrCode className="mr-1 h-4 w-4" />
+                          Conectar con QR
+                        </Button>
+                        {session.estado !== 'CONECTADO' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          >
+                            <Code className="mr-1 h-4 w-4" />
+                            Conectar con código
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                          onClick={() => handleDeleteSession(session.id)}
+                        >
+                          <Trash2 className="mr-1 h-4 w-4" />
+                          Eliminar
+                        </Button>
+                      </CardFooter>
                     </Card>
                   ))
                 ) : (
@@ -364,18 +534,19 @@ const WhatsApp: React.FC = () => {
               Con su teléfono, escanee este código QR usando WhatsApp para conectar su cuenta.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-6">
+          <div className="flex flex-col items-center py-6">
             {qrCodeImage && (
               <img 
                 src={qrCodeImage} 
                 alt="Código QR de WhatsApp" 
-                className="w-64 h-64 object-contain"
+                className="w-64 h-64 object-contain mb-6"
               />
             )}
+            <Button onClick={handleConnectComplete} className="mt-4">
+              <Check className="mr-2 h-4 w-4" />
+              Listo - Conectado
+            </Button>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowQrModal(false)}>Cerrar</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </SidebarProvider>
