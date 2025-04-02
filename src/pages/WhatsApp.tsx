@@ -34,8 +34,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 interface WhatsAppSession {
   id: string;
   nombre_sesion: string;
-  estado: string;
+  estado: string | null;
   fecha_creacion: string;
+  user_id: string;
+  fecha_actualizacion: string;
 }
 
 interface WhatsAppConfig {
@@ -45,12 +47,24 @@ interface WhatsAppConfig {
   webhook_url: string;
 }
 
+interface SystemConfig {
+  id: string;
+  nombre_sistema: string;
+  [key: string]: any;
+}
+
+interface UserProfile {
+  id: string;
+  nombre_completo: string | null;
+  [key: string]: any;
+}
+
 const WhatsApp: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [systemConfig, setSystemConfig] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
   const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +90,7 @@ const WhatsApp: React.FC = () => {
             .eq('id', user.id)
             .maybeSingle();
           
-          setProfile(profileData);
+          setProfile(profileData as UserProfile | null);
           
           // Obtener sesiones de WhatsApp del usuario
           const { data: sessionsData, error: sessionsError } = await supabase
@@ -88,7 +102,7 @@ const WhatsApp: React.FC = () => {
           if (sessionsError) {
             console.error('Error al obtener sesiones:', sessionsError);
           } else {
-            setSessions(sessionsData || []);
+            setSessions(sessionsData as WhatsAppSession[] || []);
           }
           
           // Obtener configuración de WhatsApp
@@ -100,7 +114,7 @@ const WhatsApp: React.FC = () => {
           if (configError) {
             console.error('Error al obtener configuración:', configError);
           } else {
-            setWhatsappConfig(configData);
+            setWhatsappConfig(configData as WhatsAppConfig | null);
           }
         } else {
           navigate('/login');
@@ -112,7 +126,7 @@ const WhatsApp: React.FC = () => {
           .select('*')
           .maybeSingle();
           
-        setSystemConfig(configData);
+        setSystemConfig(configData as SystemConfig | null);
       } catch (error) {
         console.error('Error al obtener datos:', error);
       } finally {
@@ -203,7 +217,7 @@ const WhatsApp: React.FC = () => {
         .order('fecha_creacion', { ascending: false });
       
       if (updatedSessions) {
-        setSessions(updatedSessions);
+        setSessions(updatedSessions as WhatsAppSession[]);
       }
       
       toast({
