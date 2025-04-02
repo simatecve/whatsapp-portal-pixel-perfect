@@ -85,7 +85,9 @@ const WhatsApp: React.FC = () => {
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedSessionName, setSelectedSessionName] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
   
   // Verificación de autenticación y carga de datos
   useEffect(() => {
@@ -162,37 +164,44 @@ const WhatsApp: React.FC = () => {
     try {
       setRefreshing(true);
       
-      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/default`, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json',
-          'X-Api-Key': whatsappConfig.api_key
+      // Para cada sesión, consultar su estado
+      for (const session of sessionsToCheck) {
+        try {
+          console.log(`Verificando estado de sesión: ${session.nombre_sesion}`);
+          const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${session.nombre_sesion}`, {
+            method: 'GET',
+            headers: {
+              'accept': 'application/json',
+              'X-Api-Key': whatsappConfig.api_key
+            }
+          });
+          
+          if (!response.ok) {
+            console.error(`Error al verificar estado de sesión ${session.nombre_sesion}:`, response.statusText);
+            continue;
+          }
+          
+          const result = await response.json() as SessionStatus;
+          console.log(`Estado de sesión ${session.nombre_sesion}:`, result);
+          
+          // Actualizar el estado en la base de datos
+          const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
+          
+          if (session.estado !== apiStatus) {
+            await supabase
+              .from('whatsapp_sesiones')
+              .update({ estado: apiStatus })
+              .eq('id', session.id);
+              
+            session.estado = apiStatus;
+          }
+        } catch (error) {
+          console.error(`Error al verificar sesión ${session.nombre_sesion}:`, error);
         }
-      });
-      
-      if (!response.ok) {
-        console.error('Error al verificar estado de sesión:', response.statusText);
-        return;
       }
       
-      const result = await response.json() as SessionStatus;
-      
-      // Actualizar el estado en la base de datos
-      const updatedSessions = [...sessions];
-      const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
-      
-      for (const session of updatedSessions) {
-        if (session.estado !== apiStatus) {
-          await supabase
-            .from('whatsapp_sesiones')
-            .update({ estado: apiStatus })
-            .eq('id', session.id);
-            
-          session.estado = apiStatus;
-        }
-      }
-      
-      setSessions(updatedSessions);
+      // Actualizar el estado de las sesiones en el componente
+      setSessions([...sessionsToCheck]);
     } catch (error) {
       console.error('Error al verificar el estado de las sesiones:', error);
     } finally {
@@ -218,9 +227,9 @@ const WhatsApp: React.FC = () => {
     setIsCreatingSession(true);
     
     try {
-      // CAMBIO PRINCIPAL: Primero llamar a la API para iniciar la sesión
+      // PRIMERO: Llamar a la API para iniciar la sesión
       console.log("Llamando a la API para iniciar sesión...");
-      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/default/start`, {
+      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${newSessionName}/start`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
@@ -229,13 +238,14 @@ const WhatsApp: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`Error al iniciar sesión en la API: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(`Error al iniciar sesión en la API: ${errorData.error || response.statusText}`);
       }
       
       const result = await response.json();
       console.log('Respuesta de la API al iniciar sesión:', result);
       
-      // Ahora crear el registro en la base de datos
+      // SEGUNDO: Crear el registro en la base de datos
       const { data: sessionData, error: sessionError } = await supabase
         .from('whatsapp_sesiones')
         .insert([
@@ -252,26 +262,13 @@ const WhatsApp: React.FC = () => {
         throw new Error(sessionError.message);
       }
       
-      // Obtener el código QR
-      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/default/auth/qr?format=image`, {
-        method: 'GET',
-        headers: {
-          'accept': 'image/png',
-          'X-Api-Key': whatsappConfig.api_key
-        }
-      });
-      
-      if (!qrResponse.ok) {
-        throw new Error(`Error al obtener el código QR: ${qrResponse.statusText}`);
-      }
-      
-      const blob = await qrResponse.blob();
-      const qrImageUrl = URL.createObjectURL(blob);
-      setQrCodeImage(qrImageUrl);
+      // Obtener el código QR para la sesión recién creada
+      await getQRCodeForSession(newSessionName);
       
       // Cerrar el modal de creación y mostrar el modal de QR
       setModalOpen(false);
       setShowQrModal(true);
+      setSelectedSessionName(newSessionName);
       
       // Actualizar la lista de sesiones
       const { data: updatedSessions } = await supabase
@@ -300,15 +297,15 @@ const WhatsApp: React.FC = () => {
     }
   };
 
-  const handleConnectQR = async (sessionId: string) => {
+  const getQRCodeForSession = async (sessionName: string) => {
     if (!whatsappConfig) return;
-
-    setSelectedSessionId(sessionId);
-    setIsCreatingSession(true);
+    
+    setQrErrorMessage(null);
     
     try {
+      console.log(`Obteniendo código QR para la sesión: ${sessionName}`);
       // Obtener el código QR
-      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/default/auth/qr?format=image`, {
+      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/${sessionName}/auth/qr?format=image`, {
         method: 'GET',
         headers: {
           'accept': 'image/png',
@@ -317,25 +314,40 @@ const WhatsApp: React.FC = () => {
       });
       
       if (!qrResponse.ok) {
-        throw new Error(`Error al obtener el código QR: ${qrResponse.statusText}`);
+        const errorData = await qrResponse.json();
+        setQrErrorMessage(errorData.error || `Error al obtener QR: ${qrResponse.statusText}`);
+        console.error(`Error al obtener código QR para ${sessionName}:`, errorData);
+        return false;
       }
       
       const blob = await qrResponse.blob();
       const qrImageUrl = URL.createObjectURL(blob);
       setQrCodeImage(qrImageUrl);
-      
-      // Mostrar el modal de QR
-      setShowQrModal(true);
+      return true;
     } catch (error) {
-      console.error('Error al obtener el código QR:', error);
+      console.error(`Error al obtener el código QR para ${sessionName}:`, error);
+      setQrErrorMessage(`Error: ${error instanceof Error ? error.message : 'Desconocido'}`);
+      return false;
+    }
+  };
+
+  const handleConnectQR = async (sessionId: string, sessionName: string) => {
+    setSelectedSessionId(sessionId);
+    setSelectedSessionName(sessionName);
+    setIsCreatingSession(true);
+    setShowQrModal(true);
+    
+    const success = await getQRCodeForSession(sessionName);
+    
+    if (!success) {
       toast({
         title: "Error",
-        description: `Error al obtener el código QR: ${error instanceof Error ? error.message : 'Desconocido'}`,
+        description: "No se pudo obtener el código QR. Intente nuevamente o reinicie la sesión.",
         variant: "destructive"
       });
-    } finally {
-      setIsCreatingSession(false);
     }
+    
+    setIsCreatingSession(false);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -368,6 +380,7 @@ const WhatsApp: React.FC = () => {
 
   const handleConnectComplete = async () => {
     setShowQrModal(false);
+    setQrCodeImage(null);
     
     // Verificar el estado de la sesión después de un breve retraso
     setTimeout(async () => {
@@ -378,6 +391,14 @@ const WhatsApp: React.FC = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString();
+  };
+
+  const retryQRCode = async () => {
+    if (selectedSessionName) {
+      setIsCreatingSession(true);
+      await getQRCodeForSession(selectedSessionName);
+      setIsCreatingSession(false);
+    }
   };
 
   return (
@@ -456,7 +477,7 @@ const WhatsApp: React.FC = () => {
                           variant="outline" 
                           size="sm" 
                           className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                          onClick={() => handleConnectQR(session.id)}
+                          onClick={() => handleConnectQR(session.id, session.nombre_sesion)}
                         >
                           <QrCode className="mr-1 h-4 w-4" />
                           Conectar con QR
@@ -535,13 +556,29 @@ const WhatsApp: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center py-6">
-            {qrCodeImage && (
+            {isCreatingSession && (
+              <div className="flex flex-col items-center justify-center h-64 w-64 bg-gray-100 rounded-lg">
+                <p className="text-gray-500">Cargando código QR...</p>
+              </div>
+            )}
+            
+            {!isCreatingSession && qrCodeImage && (
               <img 
                 src={qrCodeImage} 
                 alt="Código QR de WhatsApp" 
-                className="w-64 h-64 object-contain mb-6"
+                className="w-64 h-64 object-contain mb-6 border rounded-lg"
               />
             )}
+            
+            {!isCreatingSession && qrErrorMessage && (
+              <div className="flex flex-col items-center mb-6">
+                <p className="text-red-500 text-center mb-4">{qrErrorMessage}</p>
+                <Button onClick={retryQRCode} variant="outline" className="mt-2">
+                  Reintentar
+                </Button>
+              </div>
+            )}
+            
             <Button onClick={handleConnectComplete} className="mt-4">
               <Check className="mr-2 h-4 w-4" />
               Listo - Conectado
