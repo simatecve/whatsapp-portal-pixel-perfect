@@ -266,7 +266,7 @@ const WhatsApp: React.FC = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Error al iniciar sesión en la API: ${errorData.error || response.statusText}`);
+        throw new Error(`Error al iniciar sesión en la API: ${errorData.message || errorData.error || response.statusText}`);
       }
       
       const result = await response.json();
