@@ -5,6 +5,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { useQRCodeManagement } from '@/hooks/whatsapp/useQRCodeManagement';
 import WhatsAppPageLayout from '@/components/whatsapp/WhatsAppPageLayout';
 import WhatsAppPageHeader from '@/components/whatsapp/WhatsAppPageHeader';
 import WhatsAppContentTabs from '@/components/whatsapp/WhatsAppContentTabs';
@@ -29,14 +30,10 @@ const WhatsApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
-  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [selectedSessionName, setSelectedSessionName] = useState<string | null>(null);
-  const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('sessions');
   
   // Usar el hook personalizado para manejar las sesiones de WhatsApp
@@ -48,9 +45,18 @@ const WhatsApp: React.FC = () => {
     refreshSessionStatus,
     createWhatsAppSession,
     deleteWhatsAppSession,
-    getQRCodeForSession
   } = useWhatsAppSessions(user);
   
+  // Usar el nuevo hook de gestión de códigos QR
+  const {
+    qrCodeImage,
+    isLoadingQR,
+    qrErrorMessage,
+    selectedSessionName,
+    loadQRCode,
+    resetQRState
+  } = useQRCodeManagement(whatsappConfig);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -98,57 +104,31 @@ const WhatsApp: React.FC = () => {
       return;
     }
     
-    setIsCreatingSession(true);
-    
     try {
       const result = await createWhatsAppSession(newSessionName);
       
       if (result.success) {
-        const qrResult = await getQRCodeForSession(newSessionName);
+        const qrResult = await loadQRCode(newSessionName);
         
-        if (qrResult.success && qrResult.qrImageUrl) {
-          setQrCodeImage(qrResult.qrImageUrl);
+        if (qrResult.success) {
           setModalOpen(false);
           setShowQrModal(true);
-          setSelectedSessionName(newSessionName);
           
           toast({
             title: "Sesión creada",
             description: "Escanee el código QR para conectar su WhatsApp",
           });
-        } else {
-          setQrErrorMessage(qrResult.errorMessage || "Error al obtener el código QR");
         }
       }
     } catch (error) {
       console.error('Error en el proceso de creación:', error);
-    } finally {
-      setIsCreatingSession(false);
     }
   };
 
   const handleConnectQR = async (sessionId: string, sessionName: string) => {
     setSelectedSessionId(sessionId);
-    setSelectedSessionName(sessionName);
-    setIsCreatingSession(true);
     setShowQrModal(true);
-    
-    const qrResult = await getQRCodeForSession(sessionName);
-    
-    if (qrResult.success && qrResult.qrImageUrl) {
-      setQrCodeImage(qrResult.qrImageUrl);
-      setQrErrorMessage(null);
-    } else {
-      setQrCodeImage(null);
-      setQrErrorMessage(qrResult.errorMessage || "No se pudo obtener el código QR");
-      toast({
-        title: "Error",
-        description: "No se pudo obtener el código QR. Intente nuevamente o reinicie la sesión.",
-        variant: "destructive"
-      });
-    }
-    
-    setIsCreatingSession(false);
+    await loadQRCode(sessionName);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -157,7 +137,7 @@ const WhatsApp: React.FC = () => {
 
   const handleConnectComplete = async () => {
     setShowQrModal(false);
-    setQrCodeImage(null);
+    resetQRState();
     
     setTimeout(async () => {
       await refreshSessionStatus();
@@ -171,17 +151,7 @@ const WhatsApp: React.FC = () => {
 
   const retryQRCode = async () => {
     if (selectedSessionName) {
-      setIsCreatingSession(true);
-      const qrResult = await getQRCodeForSession(selectedSessionName);
-      
-      if (qrResult.success && qrResult.qrImageUrl) {
-        setQrCodeImage(qrResult.qrImageUrl);
-        setQrErrorMessage(null);
-      } else {
-        setQrErrorMessage(qrResult.errorMessage || "No se pudo obtener el código QR");
-      }
-      
-      setIsCreatingSession(false);
+      await loadQRCode(selectedSessionName);
     }
   };
 
@@ -195,7 +165,7 @@ const WhatsApp: React.FC = () => {
       <WhatsAppPageHeader 
         systemName={systemConfig?.nombre_sistema}
         openCreateModal={() => setModalOpen(true)}
-        isCreatingSession={isCreatingSession}
+        isCreatingSession={isLoadingQR}
       />
       
       <WhatsAppContentTabs 
@@ -214,14 +184,14 @@ const WhatsApp: React.FC = () => {
         newSessionName={newSessionName}
         setNewSessionName={setNewSessionName}
         createSession={createSession}
-        isCreatingSession={isCreatingSession}
+        isCreatingSession={isLoadingQR}
       />
 
       <QRCodeModal
         showQrModal={showQrModal}
         setShowQrModal={setShowQrModal}
         qrCodeImage={qrCodeImage}
-        isCreatingSession={isCreatingSession}
+        isCreatingSession={isLoadingQR}
         qrErrorMessage={qrErrorMessage}
         retryQRCode={retryQRCode}
         handleConnectComplete={handleConnectComplete}
