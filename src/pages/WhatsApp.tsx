@@ -158,10 +158,10 @@ const WhatsApp: React.FC = () => {
       for (const session of sessionsToCheck) {
         try {
           console.log(`Verificando estado de sesión: ${session.nombre_sesion}`);
-          const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${session.nombre_sesion}`, {
+          const response = await fetch(`${whatsappConfig.api_url}/api/${session.nombre_sesion}/auth/qr?format=image`, {
             method: 'GET',
             headers: {
-              'accept': 'application/json',
+              'accept': 'image/png',
               'X-Api-Key': whatsappConfig.api_key
             }
           });
@@ -254,7 +254,7 @@ const WhatsApp: React.FC = () => {
       
       console.log("Payload para iniciar sesión:", sessionApiPayload);
       
-      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${newSessionName}/start`, {
+      const response = await fetch(`${whatsappConfig.api_url}/api/${newSessionName}/start`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
@@ -327,7 +327,7 @@ const WhatsApp: React.FC = () => {
     
     try {
       console.log(`Obteniendo código QR para la sesión: ${sessionName}`);
-      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/sessions/${sessionName}/qr?format=image`, {
+      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/${sessionName}/auth/qr?format=image`, {
         method: 'GET',
         headers: {
           'accept': 'image/png',
