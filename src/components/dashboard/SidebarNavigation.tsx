@@ -1,13 +1,20 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
-  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook, FileText, ExternalLink
+  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook, FileText, ExternalLink, Key
 } from 'lucide-react';
 import { 
   SidebarMenu, SidebarMenuItem, SidebarMenuButton
 } from '@/components/ui/sidebar';
 import { useLocation, Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 type SidebarNavigationProps = {
   handleLogout: () => void;
@@ -15,6 +22,31 @@ type SidebarNavigationProps = {
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) => {
   const location = useLocation();
+  const [apiKey, setApiKey] = useState<string>('');
+  
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('whatsapp_config')
+          .select('api_key')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching API key:', error);
+          return;
+        }
+        
+        if (data) {
+          setApiKey(data.api_key);
+        }
+      } catch (error) {
+        console.error('Error in API key fetch:', error);
+      }
+    };
+    
+    fetchApiKey();
+  }, []);
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -22,6 +54,18 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
 
   const openApiDocs = () => {
     window.open('https://swagger.ecnix.ai/', '_blank', 'noopener,noreferrer');
+  };
+
+  const copyApiKey = () => {
+    if (apiKey) {
+      navigator.clipboard.writeText(apiKey)
+        .then(() => {
+          alert('API key copied to clipboard!');
+        })
+        .catch((err) => {
+          console.error('Failed to copy API key:', err);
+        });
+    }
   };
 
   return (
@@ -82,10 +126,29 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
         </SidebarMenuItem>
         
         <SidebarMenuItem>
-          <SidebarMenuButton tooltip="API Doc" onClick={openApiDocs}>
-            <FileText className="h-5 w-5" />
-            <span className="flex items-center">API Doc <ExternalLink className="h-3 w-3 ml-1" /></span>
-          </SidebarMenuButton>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton tooltip="API Doc">
+                <FileText className="h-5 w-5" />
+                <span className="flex items-center">API Doc <ExternalLink className="h-3 w-3 ml-1" /></span>
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem onClick={openApiDocs}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                <span>Open API Documentation</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyApiKey} className="flex items-center">
+                <Key className="h-4 w-4 mr-2" />
+                <div className="flex flex-col">
+                  <span className="font-medium">API Key</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {apiKey || "Loading..."}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarMenuItem>
         
         <SidebarMenuItem>
