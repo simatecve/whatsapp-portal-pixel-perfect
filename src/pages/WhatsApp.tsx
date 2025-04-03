@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
@@ -158,10 +159,10 @@ const WhatsApp: React.FC = () => {
       for (const session of sessionsToCheck) {
         try {
           console.log(`Verificando estado de sesión: ${session.nombre_sesion}`);
-          const response = await fetch(`${whatsappConfig.api_url}/api/${session.nombre_sesion}/auth/qr?format=image`, {
+          const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${session.nombre_sesion}`, {
             method: 'GET',
             headers: {
-              'accept': 'image/png',
+              'accept': 'application/json',
               'X-Api-Key': whatsappConfig.api_key
             }
           });
@@ -171,7 +172,7 @@ const WhatsApp: React.FC = () => {
             continue;
           }
           
-          const result = await response.json() as SessionStatus;
+          const result = await response.json();
           console.log(`Estado de sesión ${session.nombre_sesion}:`, result);
           
           const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
