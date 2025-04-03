@@ -31,7 +31,15 @@ export const useWhatsAppSessions = (user: User | null) => {
   );
   
   // QR code management functionality
-  const { getQRCodeForSession } = useQRCodeManagement(whatsappConfig);
+  const { 
+    qrCodeImage,
+    isLoadingQR,
+    qrErrorMessage,
+    selectedSessionName,
+    loadQRCode,
+    resetQRState,
+    getQRCodeForSession
+  } = useQRCodeManagement(whatsappConfig);
   
   return {
     sessions,
@@ -41,6 +49,12 @@ export const useWhatsAppSessions = (user: User | null) => {
     refreshSessionStatus,
     createWhatsAppSession,
     deleteWhatsAppSession,
+    qrCodeImage,
+    isLoadingQR,
+    qrErrorMessage,
+    selectedSessionName,
+    loadQRCode,
+    resetQRState,
     getQRCodeForSession
   };
 };
