@@ -105,7 +105,15 @@ export const useWhatsAppSessions = (user: User | null) => {
           const result = await response.json();
           console.log(`Estado de sesión ${session.nombre_sesion}:`, result);
           
-          const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
+          // Mapear el estado de la API a los estados internos de la aplicación
+          let apiStatus;
+          if (result.status === 'CONNECTED') {
+            apiStatus = 'CONECTADO';
+          } else if (result.status === 'WORKING') {
+            apiStatus = 'WORKING';
+          } else {
+            apiStatus = 'DESCONECTADO';
+          }
           
           if (session.estado !== apiStatus) {
             await supabase

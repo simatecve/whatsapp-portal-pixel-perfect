@@ -27,20 +27,38 @@ const SessionCard: React.FC<SessionCardProps> = ({
   handleDeleteSession,
   formatDate,
 }) => {
+  // Determinar si la sesión está activa (conectada o en proceso de trabajo)
+  const isSessionActive = session.estado === 'CONECTADO' || session.estado === 'WORKING';
+  
+  // Determinar el color y texto del badge según el estado
+  const getBadgeVariant = () => {
+    if (session.estado === 'CONECTADO' || session.estado === 'WORKING') {
+      return {
+        variant: 'success',
+        className: 'bg-green-100 text-green-800 hover:bg-green-100',
+        text: session.estado === 'WORKING' ? 'Activo' : 'Conectado'
+      };
+    } else {
+      return {
+        variant: 'destructive',
+        className: 'bg-red-100 text-red-800 hover:bg-red-100',
+        text: 'Desconectado'
+      };
+    }
+  };
+  
+  const badgeProps = getBadgeVariant();
+
   return (
     <Card key={session.id} className="hover:shadow-md transition-shadow duration-200 border">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{session.nombre_sesion}</CardTitle>
           <Badge 
-            variant={session.estado === 'CONECTADO' ? 'success' : 'destructive'}
-            className={
-              session.estado === 'CONECTADO' 
-                ? 'bg-green-100 text-green-800 hover:bg-green-100' 
-                : 'bg-red-100 text-red-800 hover:bg-red-100'
-            }
+            variant={badgeProps.variant as any}
+            className={badgeProps.className}
           >
-            {session.estado === 'CONECTADO' ? 'Conectado' : 'Desconectado'}
+            {badgeProps.text}
           </Badge>
         </div>
         <p className="text-xs text-gray-500 mt-1">
@@ -48,24 +66,26 @@ const SessionCard: React.FC<SessionCardProps> = ({
         </p>
       </CardHeader>
       <CardFooter className="pt-2 pb-4 flex flex-wrap gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-          onClick={() => handleConnectQR(session.id, session.nombre_sesion)}
-        >
-          <QrCode className="mr-1 h-4 w-4" />
-          Conectar con QR
-        </Button>
-        {session.estado !== 'CONECTADO' && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-          >
-            <Code className="mr-1 h-4 w-4" />
-            Conectar con código
-          </Button>
+        {!isSessionActive && (
+          <>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+              onClick={() => handleConnectQR(session.id, session.nombre_sesion)}
+            >
+              <QrCode className="mr-1 h-4 w-4" />
+              Conectar con QR
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            >
+              <Code className="mr-1 h-4 w-4" />
+              Conectar con código
+            </Button>
+          </>
         )}
         <Button 
           variant="outline" 
