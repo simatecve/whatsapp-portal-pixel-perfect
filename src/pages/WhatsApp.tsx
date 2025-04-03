@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { PlusCircle, QrCode, Code, Trash2, Check } from 'lucide-react';
+import { PlusCircle, QrCode, Code, Trash2, Check, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -89,16 +88,13 @@ const WhatsApp: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
   
-  // Verificación de autenticación y carga de datos
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Obtener usuario actual
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
         
         if (user) {
-          // Obtener perfil del usuario
           const { data: profileData } = await supabase
             .from('perfiles')
             .select('*')
@@ -107,7 +103,6 @@ const WhatsApp: React.FC = () => {
           
           setProfile(profileData as UserProfile | null);
           
-          // Obtener sesiones de WhatsApp del usuario
           const { data: sessionsData, error: sessionsError } = await supabase
             .from('whatsapp_sesiones')
             .select('*')
@@ -119,13 +114,11 @@ const WhatsApp: React.FC = () => {
           } else {
             setSessions(sessionsData as WhatsAppSession[] || []);
             
-            // Verificar estado de cada sesión con la API
             if (sessionsData && sessionsData.length > 0) {
               await checkSessionsStatus(sessionsData as WhatsAppSession[]);
             }
           }
           
-          // Obtener configuración de WhatsApp
           const { data: configData, error: configError } = await supabase
             .from('whatsapp_config')
             .select('*')
@@ -140,7 +133,6 @@ const WhatsApp: React.FC = () => {
           navigate('/login');
         }
         
-        // Obtener configuración del sistema
         const { data: configData } = await supabase
           .from('configuracion_sistema')
           .select('*')
@@ -157,14 +149,12 @@ const WhatsApp: React.FC = () => {
     fetchData();
   }, [navigate]);
 
-  // Verificar el estado de las sesiones
   const checkSessionsStatus = async (sessionsToCheck: WhatsAppSession[]) => {
     if (!whatsappConfig) return;
 
     try {
       setRefreshing(true);
       
-      // Para cada sesión, consultar su estado
       for (const session of sessionsToCheck) {
         try {
           console.log(`Verificando estado de sesión: ${session.nombre_sesion}`);
@@ -184,7 +174,6 @@ const WhatsApp: React.FC = () => {
           const result = await response.json() as SessionStatus;
           console.log(`Estado de sesión ${session.nombre_sesion}:`, result);
           
-          // Actualizar el estado en la base de datos
           const apiStatus = result.status === 'CONNECTED' ? 'CONECTADO' : 'DESCONECTADO';
           
           if (session.estado !== apiStatus) {
@@ -200,7 +189,6 @@ const WhatsApp: React.FC = () => {
         }
       }
       
-      // Actualizar el estado de las sesiones en el componente
       setSessions([...sessionsToCheck]);
     } catch (error) {
       console.error('Error al verificar el estado de las sesiones:', error);
@@ -227,14 +215,53 @@ const WhatsApp: React.FC = () => {
     setIsCreatingSession(true);
     
     try {
-      // PRIMERO: Llamar a la API para iniciar la sesión
-      console.log("Llamando a la API para iniciar sesión...");
+      const sessionApiPayload = {
+        name: newSessionName,
+        status: "STARTING",
+        config: {
+          metadata: {
+            "user.id": user?.id || "",
+            "user.email": user?.email || ""
+          },
+          debug: false,
+          noweb: {
+            markOnline: true,
+            store: {
+              enabled: true,
+              fullSync: false
+            }
+          },
+          webhooks: [
+            {
+              url: whatsappConfig.webhook_url,
+              events: [
+                "message",
+                "session.status"
+              ],
+              retries: {
+                delaySeconds: 2,
+                attempts: 15,
+                policy: "linear"
+              }
+            }
+          ]
+        },
+        me: null,
+        engine: {
+          engine: "NOWEB"
+        }
+      };
+      
+      console.log("Payload para iniciar sesión:", sessionApiPayload);
+      
       const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${newSessionName}/start`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-Api-Key': whatsappConfig.api_key
-        }
+        },
+        body: JSON.stringify(sessionApiPayload)
       });
       
       if (!response.ok) {
@@ -245,7 +272,6 @@ const WhatsApp: React.FC = () => {
       const result = await response.json();
       console.log('Respuesta de la API al iniciar sesión:', result);
       
-      // SEGUNDO: Crear el registro en la base de datos
       const { data: sessionData, error: sessionError } = await supabase
         .from('whatsapp_sesiones')
         .insert([
@@ -262,15 +288,12 @@ const WhatsApp: React.FC = () => {
         throw new Error(sessionError.message);
       }
       
-      // Obtener el código QR para la sesión recién creada
       await getQRCodeForSession(newSessionName);
       
-      // Cerrar el modal de creación y mostrar el modal de QR
       setModalOpen(false);
       setShowQrModal(true);
       setSelectedSessionName(newSessionName);
       
-      // Actualizar la lista de sesiones
       const { data: updatedSessions } = await supabase
         .from('whatsapp_sesiones')
         .select('*')
@@ -304,7 +327,6 @@ const WhatsApp: React.FC = () => {
     
     try {
       console.log(`Obteniendo código QR para la sesión: ${sessionName}`);
-      // Obtener el código QR
       const qrResponse = await fetch(`${whatsappConfig.api_url}/api/${sessionName}/auth/qr?format=image`, {
         method: 'GET',
         headers: {
@@ -361,7 +383,6 @@ const WhatsApp: React.FC = () => {
         throw new Error(error.message);
       }
       
-      // Actualizar la lista de sesiones
       setSessions(sessions.filter(session => session.id !== sessionId));
       
       toast({
@@ -382,7 +403,6 @@ const WhatsApp: React.FC = () => {
     setShowQrModal(false);
     setQrCodeImage(null);
     
-    // Verificar el estado de la sesión después de un breve retraso
     setTimeout(async () => {
       await checkSessionsStatus(sessions);
     }, 2000);
@@ -404,12 +424,10 @@ const WhatsApp: React.FC = () => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-gray-50">
-        {/* Sidebar */}
         <Sidebar>
           <SidebarHeader>
             <SidebarLogo systemName={systemConfig?.nombre_sistema} />
             
-            {/* Información del usuario */}
             {profile && <UserProfilePanel profile={profile} user={user} />}
           </SidebarHeader>
           
@@ -418,13 +436,11 @@ const WhatsApp: React.FC = () => {
           </SidebarContent>
           
           <SidebarFooter>
-            {/* Footer content if needed */}
           </SidebarFooter>
           
           <SidebarRail />
         </Sidebar>
         
-        {/* Main Content */}
         <SidebarInset>
           <TopNavbar systemName={systemConfig?.nombre_sistema} />
           
@@ -448,7 +464,6 @@ const WhatsApp: React.FC = () => {
               </div>
             </div>
             
-            {/* Cuadrícula de sesiones */}
             <div className="px-4 sm:px-0 mt-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sessions.length > 0 ? (
@@ -516,7 +531,6 @@ const WhatsApp: React.FC = () => {
         </SidebarInset>
       </div>
 
-      {/* Modal para crear nueva sesión */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -546,7 +560,6 @@ const WhatsApp: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal para mostrar el código QR */}
       <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
