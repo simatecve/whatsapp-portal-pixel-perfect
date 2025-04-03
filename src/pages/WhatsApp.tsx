@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
@@ -254,7 +255,8 @@ const WhatsApp: React.FC = () => {
       
       console.log("Payload para iniciar sesión:", sessionApiPayload);
       
-      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${newSessionName}/start`, {
+      // Fix the URL to use the correct endpoint format
+      const response = await fetch(`${whatsappConfig.api_url}/api/sessions`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
@@ -327,7 +329,8 @@ const WhatsApp: React.FC = () => {
     
     try {
       console.log(`Obteniendo código QR para la sesión: ${sessionName}`);
-      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/${sessionName}/auth/qr?format=image`, {
+      // Update the URL to use the correct endpoint format
+      const qrResponse = await fetch(`${whatsappConfig.api_url}/api/sessions/${sessionName}/qr?format=image`, {
         method: 'GET',
         headers: {
           'accept': 'image/png',
