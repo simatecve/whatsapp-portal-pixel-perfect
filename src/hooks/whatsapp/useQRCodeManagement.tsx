@@ -31,11 +31,16 @@ export const useQRCodeManagement = (whatsappConfig: WhatsAppConfig | null) => {
       });
       
       if (!qrResponse.ok) {
-        const errorData = await qrResponse.json();
-        const errorMessage = errorData.error || `Error al obtener QR: ${qrResponse.statusText}`;
+        const errorText = await qrResponse.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
         console.error(`Error al obtener código QR para ${sessionName}:`, errorData);
-        setQrErrorMessage(errorMessage);
-        return { success: false, errorMessage };
+        setQrErrorMessage(`Error: ${errorData.error || qrResponse.statusText} (${qrResponse.status})`);
+        return { success: false, errorMessage: errorData.error || `Error al obtener QR: ${qrResponse.statusText}` };
       }
       
       const blob = await qrResponse.blob();
@@ -72,10 +77,15 @@ export const useQRCodeManagement = (whatsappConfig: WhatsAppConfig | null) => {
       });
       
       if (!qrResponse.ok) {
-        const errorData = await qrResponse.json();
-        const errorMessage = errorData.error || `Error al obtener QR: ${qrResponse.statusText}`;
+        const errorText = await qrResponse.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
         console.error(`Error al obtener código QR para ${sessionName}:`, errorData);
-        return { success: false, errorMessage };
+        return { success: false, errorMessage: errorData.error || `Error al obtener QR: ${qrResponse.statusText}` };
       }
       
       const blob = await qrResponse.blob();

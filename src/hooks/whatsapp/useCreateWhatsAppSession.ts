@@ -37,9 +37,10 @@ export const useCreateWhatsAppSession = (
     }
     
     try {
+      // Construir el payload según la estructura de API correcta
       const sessionApiPayload = {
         name: sessionName,
-        status: "STARTING",
+        start: true,
         config: {
           metadata: {
             "user.id": user.id || "",
@@ -47,10 +48,9 @@ export const useCreateWhatsAppSession = (
           },
           debug: false,
           noweb: {
-            markOnline: true,
             store: {
               enabled: true,
-              fullSync: false
+              fullSync: true
             }
           },
           webhooks: [
@@ -67,16 +67,13 @@ export const useCreateWhatsAppSession = (
               }
             }
           ]
-        },
-        me: null,
-        engine: {
-          engine: "NOWEB"
         }
       };
       
-      console.log("Payload para iniciar sesión:", sessionApiPayload);
+      console.log("Payload para crear sesión:", sessionApiPayload);
       
-      const response = await fetch(`${whatsappConfig.api_url}/api/${sessionName}/start`, {
+      // Actualizar la URL del endpoint para crear la sesión
+      const response = await fetch(`${whatsappConfig.api_url}/api/sessions`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
@@ -87,13 +84,21 @@ export const useCreateWhatsAppSession = (
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error al iniciar sesión en la API: ${errorData.message || errorData.error || response.statusText}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        console.error('Error response al crear sesión:', errorData);
+        throw new Error(`Error al crear la sesión: ${errorData.error || response.statusText} (${response.status})`);
       }
       
       const result = await response.json();
-      console.log('Respuesta de la API al iniciar sesión:', result);
+      console.log('Respuesta de la API al crear sesión:', result);
       
+      // Guardar la sesión en la base de datos
       const { data: sessionData, error: sessionError } = await supabase
         .from('whatsapp_sesiones')
         .insert([
@@ -110,6 +115,7 @@ export const useCreateWhatsAppSession = (
         throw new Error(sessionError.message);
       }
       
+      // Actualizar la lista de sesiones
       const { data: updatedSessions } = await supabase
         .from('whatsapp_sesiones')
         .select('*')
