@@ -1,0 +1,261 @@
+
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface WebhookFormProps {
+  webhook: WebhookConfig | null;
+  sessions: WhatsAppSession[];
+  onSuccess: () => void;
+  user: User | null;
+}
+
+interface WhatsAppSession {
+  id: string;
+  nombre_sesion: string;
+}
+
+interface WebhookConfig {
+  id: string;
+  session_name: string;
+  webhook_url: string;
+  events: string[];
+  hmac_key: string | null;
+  retry_attempts: number;
+  retry_delay_seconds: number;
+  retry_policy: string;
+}
+
+interface FormInputs {
+  session_name: string;
+  webhook_url: string;
+  events: string[];
+  hmac_key: string;
+  retry_attempts: number;
+  retry_delay_seconds: number;
+  retry_policy: string;
+}
+
+const AVAILABLE_EVENTS = [
+  { id: 'message', label: 'Mensaje' },
+  { id: 'message.ack', label: 'Confirmación de mensaje' },
+  { id: 'message.update', label: 'Actualización de mensaje' },
+  { id: 'message.delete', label: 'Eliminación de mensaje' },
+  { id: 'message.reaction', label: 'Reacción a mensaje' },
+  { id: 'session.status', label: 'Estado de sesión' },
+  { id: 'group.join', label: 'Unión a grupo' },
+  { id: 'group.leave', label: 'Salida de grupo' },
+  { id: 'presence.update', label: 'Actualización de presencia' },
+  { id: 'call', label: 'Llamada' },
+  { id: 'poll.response', label: 'Respuesta a encuesta' }
+];
+
+const RETRY_POLICIES = [
+  { value: 'linear', label: 'Lineal' },
+  { value: 'exponential', label: 'Exponencial' }
+];
+
+const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) => {
+  const { toast } = useToast();
+  const { register, handleSubmit, watch, setValue } = useForm<FormInputs>({
+    defaultValues: webhook || {
+      session_name: '',
+      webhook_url: '',
+      events: [],
+      hmac_key: '',
+      retry_attempts: 15,
+      retry_delay_seconds: 2,
+      retry_policy: 'linear'
+    }
+  });
+
+  const onSubmit = async (data: FormInputs) => {
+    if (!user) return;
+
+    try {
+      const webhookData = {
+        ...data,
+        user_id: user.id
+      };
+
+      let result;
+      if (webhook) {
+        result = await supabase
+          .from('webhook_config')
+          .update(webhookData)
+          .eq('id', webhook.id);
+      } else {
+        result = await supabase
+          .from('webhook_config')
+          .insert([webhookData]);
+      }
+
+      if (result.error) throw result.error;
+
+      // Update WhatsApp session with webhook configuration
+      const apiUrl = `https://api.ecnix.ai/api/sessions/${data.session_name}`;
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'accept': 'application/json',
+          'X-Api-Key': '4e2adc62ecbe4769908d52cd28eb0165',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          config: {
+            webhooks: [{
+              url: data.webhook_url,
+              events: data.events,
+              hmac: {
+                key: data.hmac_key || undefined
+              },
+              retries: {
+                delaySeconds: data.retry_delay_seconds,
+                attempts: data.retry_attempts,
+                policy: data.retry_policy
+              }
+            }]
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating WhatsApp session: ${response.statusText}`);
+      }
+
+      toast({
+        title: "Éxito",
+        description: webhook ? "Webhook actualizado correctamente" : "Webhook creado correctamente"
+      });
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving webhook:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el webhook",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const selectedEvents = watch('events') || [];
+
+  const toggleEvent = (event: string) => {
+    const currentEvents = selectedEvents;
+    const newEvents = currentEvents.includes(event)
+      ? currentEvents.filter(e => e !== event)
+      : [...currentEvents, event];
+    setValue('events', newEvents);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+      <div className="space-y-4">
+        <div>
+          <Label>Sesión de WhatsApp</Label>
+          <Select
+            {...register('session_name')}
+            onValueChange={(value) => setValue('session_name', value)}
+            defaultValue={webhook?.session_name}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Seleccione una sesión" />
+            </SelectTrigger>
+            <SelectContent>
+              {sessions.map((session) => (
+                <SelectItem key={session.id} value={session.nombre_sesion}>
+                  {session.nombre_sesion}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>URL del Webhook</Label>
+          <Input {...register('webhook_url')} placeholder="https://api.example.com/webhook" />
+        </div>
+
+        <div>
+          <Label>HMAC Key (opcional)</Label>
+          <Input {...register('hmac_key')} placeholder="Clave secreta para HMAC" />
+        </div>
+
+        <div>
+          <Label>Número de reintentos</Label>
+          <Input
+            type="number"
+            {...register('retry_attempts')}
+            defaultValue={15}
+          />
+        </div>
+
+        <div>
+          <Label>Intervalo de reintento (segundos)</Label>
+          <Input
+            type="number"
+            {...register('retry_delay_seconds')}
+            defaultValue={2}
+          />
+        </div>
+
+        <div>
+          <Label>Política de reintentos</Label>
+          <Select
+            {...register('retry_policy')}
+            onValueChange={(value) => setValue('retry_policy', value)}
+            defaultValue={webhook?.retry_policy || 'linear'}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Seleccione una política" />
+            </SelectTrigger>
+            <SelectContent>
+              {RETRY_POLICIES.map((policy) => (
+                <SelectItem key={policy.value} value={policy.value}>
+                  {policy.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="mb-2 block">Eventos</Label>
+          <div className="grid grid-cols-2 gap-4">
+            {AVAILABLE_EVENTS.map((event) => (
+              <div key={event.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={event.id}
+                  checked={selectedEvents.includes(event.id)}
+                  onCheckedChange={() => toggleEvent(event.id)}
+                />
+                <label
+                  htmlFor={event.id}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {event.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="submit">
+          {webhook ? 'Actualizar' : 'Crear'} Webhook
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+export default WebhookForm;

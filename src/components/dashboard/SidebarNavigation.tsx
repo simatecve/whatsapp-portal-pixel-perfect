@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
-  LogOut, HelpCircle, Phone, Contact, UsersRound
+  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook
 } from 'lucide-react';
 import { 
   SidebarMenu, SidebarMenuItem, SidebarMenuButton
@@ -16,7 +15,6 @@ type SidebarNavigationProps = {
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) => {
   const location = useLocation();
   
-  // Comprueba si la ruta actual coincide con el enlace
   const isActive = (path: string) => {
     return location.pathname === path;
   };
@@ -83,6 +81,15 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
             <Link to="/configuracion">
               <Settings className="h-5 w-5" />
               <span>Configuración</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild tooltip="Integraciones" isActive={isActive('/integraciones')}>
+            <Link to="/integraciones">
+              <Webhook className="h-5 w-5" />
+              <span>Integraciones</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
