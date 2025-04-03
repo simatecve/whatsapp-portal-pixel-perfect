@@ -26,7 +26,11 @@ export function useWhatsAppGroups(selectedSession: string | null) {
     setError(null);
     
     try {
-      const response = await fetch(`https://api.ecnix.ai/api/${sessionId}/groups`, {
+      // Make sure we're using the correct API URL format with the session name
+      const apiUrl = `https://api.ecnix.ai/api/${sessionId}/groups`;
+      console.log('Fetching groups from:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'accept': '*/*',
@@ -39,7 +43,11 @@ export function useWhatsAppGroups(selectedSession: string | null) {
       }
       
       const data = await response.json();
-      setGroups(Object.values(data));
+      console.log('Groups data received:', data);
+      
+      // Ensure we're handling the response format correctly
+      const groupsArray = Array.isArray(data) ? data : Object.values(data);
+      setGroups(groupsArray);
     } catch (err) {
       console.error('Error fetching WhatsApp groups:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al obtener grupos');

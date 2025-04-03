@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { WhatsAppGroup, useWhatsAppGroups } from '@/hooks/useWhatsAppGroups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCcw, UserCheck, Info } from 'lucide-react';
+import { RefreshCcw, UserCheck, Info, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import SessionSelector from '@/components/whatsapp/SessionSelector';
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type GroupsListProps = {
   sessions: Array<{
@@ -40,6 +41,12 @@ const GroupCard: React.FC<{ group: WhatsAppGroup }> = ({ group }) => {
             <UserCheck className="h-4 w-4 mr-1 text-gray-500" />
             <span className="text-gray-700">{group.participants_count || 0} participantes</span>
           </div>
+          {group.creation && (
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+              <span className="text-gray-700">{new Date(group.creation).toLocaleDateString()}</span>
+            </div>
+          )}
           {group.description && (
             <div className="col-span-2 text-gray-600 text-xs mt-2">
               {group.description}
