@@ -11,6 +11,7 @@ import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
 import ContactsTable from './ContactsTable';
 import SessionSelector from './SessionSelector';
 import LoadingState from './LoadingState';
+import { toast } from 'sonner';
 
 interface WhatsAppSession {
   id: string;
@@ -83,28 +84,42 @@ const ContactsList: React.FC<ContactsListProps> = ({
       setError(null);
       
       try {
+        console.log(`Fetching contacts for session: ${effectiveSelectedSession}`);
+        console.log(`API URL: ${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`);
+        
         const response = await fetch(
           `${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`,
           {
             method: 'GET',
             headers: {
               'accept': '*/*',
+              'Content-Type': 'application/json',
               'X-Api-Key': whatsappConfig.api_key
             }
           }
         );
         
         if (!response.ok) {
-          throw new Error(`Error al obtener contactos: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error response:', errorData);
+          const errorMessage = errorData.error || response.statusText;
+          throw new Error(`Error al obtener contactos: ${errorMessage} (${response.status})`);
         }
         
         const data = await response.json();
         console.log('Contactos obtenidos:', data);
         
-        setContacts(Array.isArray(data) ? data : []);
+        if (!Array.isArray(data)) {
+          console.error('La respuesta no es un array:', data);
+          throw new Error('El formato de los contactos no es válido');
+        }
+        
+        setContacts(data);
       } catch (error) {
         console.error('Error al obtener contactos:', error);
-        setError(`Error al obtener contactos: ${error instanceof Error ? error.message : 'Desconocido'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        setError(errorMessage);
+        toast.error(`Error al obtener contactos: ${errorMessage}`);
         setContacts([]);
       } finally {
         setIsLoading(false);

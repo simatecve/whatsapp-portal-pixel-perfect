@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SystemConfig {
   id: string;
@@ -46,7 +47,7 @@ const Contactos: React.FC = () => {
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
-  const { sessions, whatsappConfig, isLoading } = useContactos(user);
+  const { sessions, whatsappConfig, isLoading, error } = useContactos(user);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,6 +75,7 @@ const Contactos: React.FC = () => {
         setSystemConfig(configData as SystemConfig | null);
       } catch (error) {
         console.error('Error al obtener datos:', error);
+        toast.error('Error al cargar datos del perfil');
       }
     };
     
@@ -94,6 +96,12 @@ const Contactos: React.FC = () => {
       }
     }
   }, [sessions, selectedSession]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
