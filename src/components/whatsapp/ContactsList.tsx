@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { User2 } from 'lucide-react';
+import { User2, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
 import { User } from '@supabase/supabase-js';
@@ -52,13 +52,15 @@ interface ContactsListProps {
   } | null;
   user?: User | null;
   standalone?: boolean;
+  selectedSession?: string | null;
 }
 
 const ContactsList: React.FC<ContactsListProps> = ({ 
   sessions: propSessions, 
   whatsappConfig: propWhatsappConfig,
   user,
-  standalone = false
+  standalone = false,
+  selectedSession: externalSelectedSession = null
 }) => {
   const { sessions: hookSessions, whatsappConfig: hookWhatsappConfig, isLoading: hookIsLoading } = 
     standalone && user ? useWhatsAppSessions(user) : { sessions: [], whatsappConfig: null, isLoading: false };
@@ -76,24 +78,27 @@ const ContactsList: React.FC<ContactsListProps> = ({
   const activeSessions = sessions.filter(s => 
     s.estado === 'CONECTADO' || s.estado === 'WORKING'
   );
+
+  // Use external selected session if provided, otherwise use internal state
+  const effectiveSelectedSession = externalSelectedSession !== null ? externalSelectedSession : selectedSession;
   
   useEffect(() => {
-    // Auto-select first active session if available
-    if (activeSessions.length > 0 && !selectedSession) {
+    // Auto-select first active session if available and no external session is set
+    if (activeSessions.length > 0 && !effectiveSelectedSession && externalSelectedSession === null) {
       setSelectedSession(activeSessions[0].nombre_sesion);
     }
-  }, [activeSessions, selectedSession]);
+  }, [activeSessions, effectiveSelectedSession, externalSelectedSession]);
   
   useEffect(() => {
     const fetchContacts = async () => {
-      if (!selectedSession || !whatsappConfig) return;
+      if (!effectiveSelectedSession || !whatsappConfig) return;
       
       setIsLoading(true);
       setError(null);
       
       try {
         const response = await fetch(
-          `${whatsappConfig.api_url}/api/contacts/all?session=${selectedSession}`,
+          `${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`,
           {
             method: 'GET',
             headers: {
@@ -121,11 +126,14 @@ const ContactsList: React.FC<ContactsListProps> = ({
     };
     
     fetchContacts();
-  }, [selectedSession, whatsappConfig]);
+  }, [effectiveSelectedSession, whatsappConfig]);
   
   const handleSessionChange = (value: string) => {
     setSelectedSession(value);
   };
+
+  // Don't show the session dropdown if we're getting the session from external props
+  const showSessionDropdown = externalSelectedSession === null;
 
   if (isLoadingSessions) {
     return (
@@ -149,35 +157,35 @@ const ContactsList: React.FC<ContactsListProps> = ({
         <div className="flex justify-between items-center">
           <CardTitle>Contactos de WhatsApp</CardTitle>
           
-          {activeSessions.length > 0 ? (
-            <Select
-              value={selectedSession || ''}
-              onValueChange={handleSessionChange}
-            >
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Seleccione una sesión" />
-              </SelectTrigger>
-              <SelectContent>
-                {activeSessions.map((session) => (
-                  <SelectItem key={session.id} value={session.nombre_sesion}>
-                    {session.nombre_sesion}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="text-sm text-gray-500">No hay sesiones activas</div>
+          {showSessionDropdown && (
+            activeSessions.length > 0 ? (
+              <Select
+                value={selectedSession || ''}
+                onValueChange={handleSessionChange}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Seleccione una sesión" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeSessions.map((session) => (
+                    <SelectItem key={session.id} value={session.nombre_sesion}>
+                      {session.nombre_sesion}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-gray-500">No hay sesiones activas</div>
+            )
           )}
         </div>
       </CardHeader>
       
       <CardContent>
         {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400 mb-2" />
+            <p className="text-gray-500">Cargando contactos...</p>
           </div>
         ) : error ? (
           <div className="py-4 text-center text-red-600">{error}</div>
@@ -212,7 +220,7 @@ const ContactsList: React.FC<ContactsListProps> = ({
               ))}
             </TableBody>
           </Table>
-        ) : selectedSession ? (
+        ) : effectiveSelectedSession ? (
           <div className="py-10 text-center text-gray-500">No se encontraron contactos</div>
         ) : (
           <div className="py-10 text-center text-gray-500">

@@ -17,6 +17,15 @@ import SidebarLogo from '@/components/dashboard/SidebarLogo';
 import UserProfilePanel from '@/components/dashboard/UserProfilePanel';
 import TopNavbar from '@/components/dashboard/TopNavbar';
 import ContactsList from '@/components/whatsapp/ContactsList';
+import { useContactos } from '@/hooks/useContactos';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 interface SystemConfig {
   id: string;
@@ -35,6 +44,9 @@ const Contactos: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+
+  const { sessions, whatsappConfig, isLoading } = useContactos(user);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,9 +80,28 @@ const Contactos: React.FC = () => {
     fetchData();
   }, [navigate]);
 
+  // Set first active session as default when sessions are loaded
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedSession) {
+      const activeSessions = sessions.filter(s => 
+        s.estado === 'CONECTADO' || s.estado === 'WORKING'
+      );
+      
+      if (activeSessions.length > 0) {
+        setSelectedSession(activeSessions[0].nombre_sesion);
+      } else if (sessions.length > 0) {
+        setSelectedSession(sessions[0].nombre_sesion);
+      }
+    }
+  }, [sessions, selectedSession]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const handleSessionChange = (value: string) => {
+    setSelectedSession(value);
   };
 
   return (
@@ -105,14 +136,43 @@ const Contactos: React.FC = () => {
                     Gestione sus contactos de WhatsApp para {systemConfig?.nombre_sistema || 'el sistema'}.
                   </p>
                 </div>
+
+                <div className="flex items-center">
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-gray-500">Cargando sesiones...</span>
+                    </div>
+                  ) : sessions.length > 0 ? (
+                    <Select
+                      value={selectedSession || ''}
+                      onValueChange={handleSessionChange}
+                    >
+                      <SelectTrigger className="w-[220px]">
+                        <SelectValue placeholder="Seleccione una sesión" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sessions.map((session) => (
+                          <SelectItem key={session.id} value={session.nombre_sesion}>
+                            {session.nombre_sesion} 
+                            {session.estado && ` (${session.estado})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-sm text-gray-500">No hay sesiones disponibles</div>
+                  )}
+                </div>
               </div>
             </div>
             
             <div className="px-4 sm:px-0 mt-6">
               {user && (
                 <ContactsList 
-                  sessions={[]} // Will be populated by useWhatsAppSessions hook
-                  whatsappConfig={null} // Will be populated by useWhatsAppSessions hook
+                  user={user}
+                  standalone={true}
+                  selectedSession={selectedSession}
                 />
               )}
             </div>
