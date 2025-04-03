@@ -101,6 +101,19 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
 
       // Update WhatsApp session with webhook configuration
       const apiUrl = `https://api.ecnix.ai/api/sessions/${data.session_name}`;
+      
+      // Create the webhook configuration exactly according to the API format
+      const webhookConfig = {
+        url: data.webhook_url,
+        events: data.events,
+        hmac: data.hmac_key ? { key: data.hmac_key } : undefined,
+        retries: {
+          delaySeconds: data.retry_delay_seconds,
+          attempts: data.retry_attempts,
+          policy: data.retry_policy
+        }
+      };
+      
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
@@ -110,18 +123,7 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
         },
         body: JSON.stringify({
           config: {
-            webhooks: [{
-              url: data.webhook_url,
-              events: data.events,
-              hmac: {
-                key: data.hmac_key || undefined
-              },
-              retries: {
-                delaySeconds: data.retry_delay_seconds,
-                attempts: data.retry_attempts,
-                policy: data.retry_policy
-              }
-            }]
+            webhooks: [webhookConfig]
           }
         })
       });
