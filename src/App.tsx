@@ -12,6 +12,7 @@ import WhatsApp from "./pages/WhatsApp";
 import Contactos from "./pages/Contactos";
 import Grupos from "./pages/Grupos";
 import Integraciones from "./pages/Integraciones";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => {
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/grupos" element={<Grupos />} />
             <Route path="/integraciones" element={<Integraciones />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
             {/* AÑADE TODAS LAS RUTAS PERSONALIZADAS ARRIBA DE LA RUTA CATCH-ALL "*" */}
             <Route path="*" element={<NotFound />} />
           </Routes>

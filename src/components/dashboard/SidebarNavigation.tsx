@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
-  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook
+  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook, FileText, ExternalLink
 } from 'lucide-react';
 import { 
   SidebarMenu, SidebarMenuItem, SidebarMenuButton
@@ -18,6 +18,10 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const openApiDocs = () => {
+    window.open('https://swagger.ecnix.ai/', '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -74,6 +78,13 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
               <BarChart2 className="h-5 w-5" />
               <span>Analítica</span>
             </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
+        <SidebarMenuItem>
+          <SidebarMenuButton tooltip="API Doc" onClick={openApiDocs}>
+            <FileText className="h-5 w-5" />
+            <span className="flex items-center">API Doc <ExternalLink className="h-3 w-3 ml-1" /></span>
           </SidebarMenuButton>
         </SidebarMenuItem>
         
