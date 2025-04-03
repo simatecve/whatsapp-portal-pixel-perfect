@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
@@ -36,7 +35,6 @@ const WhatsApp: React.FC = () => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('sessions');
   
-  // Usar el hook personalizado para manejar las sesiones de WhatsApp
   const {
     sessions,
     whatsappConfig,
@@ -47,7 +45,6 @@ const WhatsApp: React.FC = () => {
     deleteWhatsAppSession,
   } = useWhatsAppSessions(user);
   
-  // Usar el nuevo hook de gestión de códigos QR
   const {
     qrCodeImage,
     isLoadingQR,

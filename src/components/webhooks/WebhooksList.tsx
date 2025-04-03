@@ -14,10 +14,6 @@ interface WebhookConfig {
   session_name: string;
   webhook_url: string;
   events: string[];
-  hmac_key: string | null;
-  retry_attempts: number;
-  retry_delay_seconds: number;
-  retry_policy: string;
 }
 
 interface WhatsAppSession {
@@ -130,7 +126,6 @@ const WebhooksList = ({ user }: { user: User | null }) => {
               <TableHead>Sesión</TableHead>
               <TableHead>URL del Webhook</TableHead>
               <TableHead>Eventos</TableHead>
-              <TableHead>Reintentos</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -140,7 +135,6 @@ const WebhooksList = ({ user }: { user: User | null }) => {
                 <TableCell>{webhook.session_name}</TableCell>
                 <TableCell className="max-w-xs truncate">{webhook.webhook_url}</TableCell>
                 <TableCell>{webhook.events.join(', ')}</TableCell>
-                <TableCell>{webhook.retry_attempts}</TableCell>
                 <TableCell className="space-x-2">
                   <Button variant="outline" size="sm" onClick={() => handleEdit(webhook)}>
                     Editar
@@ -153,7 +147,7 @@ const WebhooksList = ({ user }: { user: User | null }) => {
             ))}
             {webhooks.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-4 text-gray-500">
+                <TableCell colSpan={4} className="text-center py-4 text-gray-500">
                   No hay webhooks configurados
                 </TableCell>
               </TableRow>
@@ -163,7 +157,7 @@ const WebhooksList = ({ user }: { user: User | null }) => {
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] mx-auto">
           <DialogHeader>
             <DialogTitle>{selectedWebhook ? 'Editar Webhook' : 'Nuevo Webhook'}</DialogTitle>
             <DialogDescription>

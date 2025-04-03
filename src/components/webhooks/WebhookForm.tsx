@@ -35,18 +35,14 @@ interface FormInputs {
   events: string[];
 }
 
+// Lista de eventos basada en la imagen de referencia
 const AVAILABLE_EVENTS = [
-  { id: 'message', label: 'message' },
-  { id: 'message.ack', label: 'message.ack' },
-  { id: 'message.update', label: 'message.update' },
-  { id: 'message.delete', label: 'message.delete' },
-  { id: 'message.reaction', label: 'message.reaction' },
   { id: 'session.status', label: 'session.status' },
+  { id: 'message', label: 'message' },
+  { id: 'message.reaction', label: 'message.reaction' },
+  { id: 'message.any', label: 'message.any' },
   { id: 'group.join', label: 'group.join' },
-  { id: 'group.leave', label: 'group.leave' },
-  { id: 'presence.update', label: 'presence.update' },
-  { id: 'call', label: 'call' },
-  { id: 'poll.response', label: 'poll.response' }
+  { id: 'group.leave', label: 'group.leave' }
 ];
 
 const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) => {
@@ -165,7 +161,7 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
 
         <div>
           <Label className="mb-2 block">Eventos</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-48 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-48 overflow-y-auto">
             {AVAILABLE_EVENTS.map((event) => (
               <div key={event.id} className="flex items-center space-x-2">
                 <Checkbox
