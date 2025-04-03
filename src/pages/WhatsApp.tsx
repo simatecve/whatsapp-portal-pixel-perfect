@@ -1,32 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarRail,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import SidebarNavigation from '@/components/dashboard/SidebarNavigation';
-import SidebarLogo from '@/components/dashboard/SidebarLogo';
-import UserProfilePanel from '@/components/dashboard/UserProfilePanel';
-import TopNavbar from '@/components/dashboard/TopNavbar';
-
-// Componentes de WhatsApp
-import SessionCard from '@/components/whatsapp/SessionCard';
+import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { useQRCodeManagement } from '@/hooks/whatsapp/useQRCodeManagement';
+import WhatsAppPageLayout from '@/components/whatsapp/WhatsAppPageLayout';
+import WhatsAppPageHeader from '@/components/whatsapp/WhatsAppPageHeader';
+import WhatsAppContentTabs from '@/components/whatsapp/WhatsAppContentTabs';
 import CreateSessionModal from '@/components/whatsapp/CreateSessionModal';
 import QRCodeModal from '@/components/whatsapp/QRCodeModal';
-import ContactsList from '@/components/whatsapp/ContactsList';
-import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface SystemConfig {
   id: string;
@@ -46,17 +29,12 @@ const WhatsApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
-  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [selectedSessionName, setSelectedSessionName] = useState<string | null>(null);
-  const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('sessions');
   
-  // Usar el hook personalizado para manejar las sesiones de WhatsApp
   const {
     sessions,
     whatsappConfig,
@@ -65,9 +43,17 @@ const WhatsApp: React.FC = () => {
     refreshSessionStatus,
     createWhatsAppSession,
     deleteWhatsAppSession,
-    getQRCodeForSession
   } = useWhatsAppSessions(user);
   
+  const {
+    qrCodeImage,
+    isLoadingQR,
+    qrErrorMessage,
+    selectedSessionName,
+    loadQRCode,
+    resetQRState
+  } = useQRCodeManagement(whatsappConfig);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -115,57 +101,31 @@ const WhatsApp: React.FC = () => {
       return;
     }
     
-    setIsCreatingSession(true);
-    
     try {
       const result = await createWhatsAppSession(newSessionName);
       
       if (result.success) {
-        const qrResult = await getQRCodeForSession(newSessionName);
+        const qrResult = await loadQRCode(newSessionName);
         
-        if (qrResult.success && qrResult.qrImageUrl) {
-          setQrCodeImage(qrResult.qrImageUrl);
+        if (qrResult.success) {
           setModalOpen(false);
           setShowQrModal(true);
-          setSelectedSessionName(newSessionName);
           
           toast({
             title: "Sesión creada",
             description: "Escanee el código QR para conectar su WhatsApp",
           });
-        } else {
-          setQrErrorMessage(qrResult.errorMessage || "Error al obtener el código QR");
         }
       }
     } catch (error) {
       console.error('Error en el proceso de creación:', error);
-    } finally {
-      setIsCreatingSession(false);
     }
   };
 
   const handleConnectQR = async (sessionId: string, sessionName: string) => {
     setSelectedSessionId(sessionId);
-    setSelectedSessionName(sessionName);
-    setIsCreatingSession(true);
     setShowQrModal(true);
-    
-    const qrResult = await getQRCodeForSession(sessionName);
-    
-    if (qrResult.success && qrResult.qrImageUrl) {
-      setQrCodeImage(qrResult.qrImageUrl);
-      setQrErrorMessage(null);
-    } else {
-      setQrCodeImage(null);
-      setQrErrorMessage(qrResult.errorMessage || "No se pudo obtener el código QR");
-      toast({
-        title: "Error",
-        description: "No se pudo obtener el código QR. Intente nuevamente o reinicie la sesión.",
-        variant: "destructive"
-      });
-    }
-    
-    setIsCreatingSession(false);
+    await loadQRCode(sessionName);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -174,7 +134,7 @@ const WhatsApp: React.FC = () => {
 
   const handleConnectComplete = async () => {
     setShowQrModal(false);
-    setQrCodeImage(null);
+    resetQRState();
     
     setTimeout(async () => {
       await refreshSessionStatus();
@@ -188,107 +148,32 @@ const WhatsApp: React.FC = () => {
 
   const retryQRCode = async () => {
     if (selectedSessionName) {
-      setIsCreatingSession(true);
-      const qrResult = await getQRCodeForSession(selectedSessionName);
-      
-      if (qrResult.success && qrResult.qrImageUrl) {
-        setQrCodeImage(qrResult.qrImageUrl);
-        setQrErrorMessage(null);
-      } else {
-        setQrErrorMessage(qrResult.errorMessage || "No se pudo obtener el código QR");
-      }
-      
-      setIsCreatingSession(false);
+      await loadQRCode(selectedSessionName);
     }
   };
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-gray-50">
-        <Sidebar>
-          <SidebarHeader>
-            <SidebarLogo systemName={systemConfig?.nombre_sistema} />
-            
-            {profile && <UserProfilePanel profile={profile} user={user} />}
-          </SidebarHeader>
-          
-          <SidebarContent>
-            <SidebarNavigation handleLogout={handleLogout} />
-          </SidebarContent>
-          
-          <SidebarFooter>
-          </SidebarFooter>
-          
-          <SidebarRail />
-        </Sidebar>
-        
-        <SidebarInset>
-          <TopNavbar systemName={systemConfig?.nombre_sistema} />
-          
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">WhatsApp</h1>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Gestione sus conexiones de WhatsApp para {systemConfig?.nombre_sistema || 'el sistema'}.
-                  </p>
-                </div>
-                <Button 
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center"
-                  disabled={isCreatingSession}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Conectar WhatsApp
-                </Button>
-              </div>
-            </div>
-            
-            <div className="px-4 sm:px-0 mt-6">
-              <Tabs
-                defaultValue="sessions"
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className="mb-4">
-                  <TabsTrigger value="sessions">Sesiones</TabsTrigger>
-                  <TabsTrigger value="contacts">Contactos</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="sessions">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {sessions.length > 0 ? (
-                      sessions.map((session) => (
-                        <SessionCard 
-                          key={session.id}
-                          session={session}
-                          handleConnectQR={handleConnectQR}
-                          handleDeleteSession={handleDeleteSession}
-                          formatDate={formatDate}
-                        />
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-12">
-                        <p className="text-gray-500">No tiene sesiones de WhatsApp conectadas.</p>
-                        <p className="text-gray-500 text-sm mt-2">Haga clic en "Conectar WhatsApp" para comenzar.</p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="contacts">
-                  <ContactsList 
-                    sessions={sessions}
-                    whatsappConfig={whatsappConfig}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </SidebarInset>
-      </div>
+    <WhatsAppPageLayout 
+      user={user}
+      profile={profile}
+      systemConfig={systemConfig}
+      handleLogout={handleLogout}
+    >
+      <WhatsAppPageHeader 
+        systemName={systemConfig?.nombre_sistema}
+        openCreateModal={() => setModalOpen(true)}
+        isCreatingSession={isLoadingQR}
+      />
+      
+      <WhatsAppContentTabs 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        sessions={sessions}
+        whatsappConfig={whatsappConfig}
+        handleConnectQR={handleConnectQR}
+        handleDeleteSession={handleDeleteSession}
+        formatDate={formatDate}
+      />
 
       <CreateSessionModal
         modalOpen={modalOpen}
@@ -296,19 +181,19 @@ const WhatsApp: React.FC = () => {
         newSessionName={newSessionName}
         setNewSessionName={setNewSessionName}
         createSession={createSession}
-        isCreatingSession={isCreatingSession}
+        isCreatingSession={isLoadingQR}
       />
 
       <QRCodeModal
         showQrModal={showQrModal}
         setShowQrModal={setShowQrModal}
         qrCodeImage={qrCodeImage}
-        isCreatingSession={isCreatingSession}
+        isCreatingSession={isLoadingQR}
         qrErrorMessage={qrErrorMessage}
         retryQRCode={retryQRCode}
         handleConnectComplete={handleConnectComplete}
       />
-    </SidebarProvider>
+    </WhatsAppPageLayout>
   );
 };
 
