@@ -41,11 +41,10 @@ export const useContactos = (user: User | null) => {
         if (sessionsError) throw sessionsError;
         setSessions(sessionsData || []);
         
-        // Get WhatsApp configuration
+        // Get WhatsApp configuration - using the correct table name "whatsapp_config"
         const { data: configData, error: configError } = await supabase
-          .from('configuracion_whatsapp')
+          .from('whatsapp_config')
           .select('*')
-          .eq('user_id', user.id)
           .maybeSingle();
           
         if (configError) throw configError;
