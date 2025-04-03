@@ -78,48 +78,6 @@ export type Database = {
         }
         Relationships: []
       }
-      webhook_config: {
-        Row: {
-          created_at: string
-          events: string[]
-          hmac_key: string | null
-          id: string
-          retry_attempts: number | null
-          retry_delay_seconds: number | null
-          retry_policy: string | null
-          session_name: string
-          updated_at: string
-          user_id: string
-          webhook_url: string
-        }
-        Insert: {
-          created_at?: string
-          events?: string[]
-          hmac_key?: string | null
-          id?: string
-          retry_attempts?: number | null
-          retry_delay_seconds?: number | null
-          retry_policy?: string | null
-          session_name: string
-          updated_at?: string
-          user_id: string
-          webhook_url: string
-        }
-        Update: {
-          created_at?: string
-          events?: string[]
-          hmac_key?: string | null
-          id?: string
-          retry_attempts?: number | null
-          retry_delay_seconds?: number | null
-          retry_policy?: string | null
-          session_name?: string
-          updated_at?: string
-          user_id?: string
-          webhook_url?: string
-        }
-        Relationships: []
-      }
       whatsapp_config: {
         Row: {
           api_key: string

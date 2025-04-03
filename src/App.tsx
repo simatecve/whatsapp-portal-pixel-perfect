@@ -11,7 +11,6 @@ import Dashboard from "./pages/Dashboard";
 import WhatsApp from "./pages/WhatsApp";
 import Contactos from "./pages/Contactos";
 import Grupos from "./pages/Grupos";
-import Integraciones from "./pages/Integraciones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,7 +30,6 @@ const App = () => {
             <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/grupos" element={<Grupos />} />
-            <Route path="/integraciones" element={<Integraciones />} />
             {/* AÑADE TODAS LAS RUTAS PERSONALIZADAS ARRIBA DE LA RUTA CATCH-ALL "*" */}
             <Route path="*" element={<NotFound />} />
           </Routes>
