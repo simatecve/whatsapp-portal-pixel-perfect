@@ -255,8 +255,8 @@ const WhatsApp: React.FC = () => {
       
       console.log("Payload para iniciar sesión:", sessionApiPayload);
       
-      // Fix the URL to use the correct endpoint format
-      const response = await fetch(`${whatsappConfig.api_url}/api/sessions`, {
+      // Updated to use the correct endpoint format with /start
+      const response = await fetch(`${whatsappConfig.api_url}/api/sessions/${newSessionName}/start`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
@@ -329,7 +329,7 @@ const WhatsApp: React.FC = () => {
     
     try {
       console.log(`Obteniendo código QR para la sesión: ${sessionName}`);
-      // Update the URL to use the correct endpoint format
+      // Use the correct QR endpoint
       const qrResponse = await fetch(`${whatsappConfig.api_url}/api/sessions/${sessionName}/qr?format=image`, {
         method: 'GET',
         headers: {
