@@ -5,7 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCcw, UserCheck, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SessionSelector from '@/components/whatsapp/SessionSelector';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type GroupsListProps = {
   sessions: Array<{
@@ -84,22 +90,11 @@ const GroupsList: React.FC<GroupsListProps> = ({ sessions, whatsappConfig }) => 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Select
-            value={selectedSession || ""}
-            onValueChange={handleSessionChange}
-            disabled={sessions.length === 0}
-          >
-            <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="Seleccionar sesión" />
-            </SelectTrigger>
-            <SelectContent>
-              {sessions.map((session) => (
-                <SelectItem key={session.id} value={session.nombre_sesion}>
-                  {session.nombre_sesion} ({session.estado === 'connected' ? 'Conectado' : 'Desconectado'})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SessionSelector 
+            sessions={sessions}
+            selectedSession={selectedSession}
+            onSessionChange={handleSessionChange}
+          />
           
           <Button 
             variant="outline" 

@@ -7,14 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Circle } from 'lucide-react';
 
 interface WhatsAppSession {
   id: string;
   nombre_sesion: string;
   estado: string | null;
-  fecha_creacion: string;
-  user_id: string;
-  fecha_actualizacion: string;
+  fecha_creacion?: string;
+  user_id?: string;
+  fecha_actualizacion?: string;
 }
 
 interface SessionSelectorProps {
@@ -32,7 +33,7 @@ const SessionSelector: React.FC<SessionSelectorProps> = ({
 }) => {
   // Filter only active sessions
   const activeSessions = sessions.filter(s => 
-    s.estado === 'CONECTADO' || s.estado === 'WORKING'
+    s.estado === 'CONECTADO' || s.estado === 'WORKING' || s.estado === 'connected'
   );
 
   if (!showSessionDropdown) {
@@ -50,8 +51,13 @@ const SessionSelector: React.FC<SessionSelectorProps> = ({
         </SelectTrigger>
         <SelectContent>
           {activeSessions.map((session) => (
-            <SelectItem key={session.id} value={session.nombre_sesion}>
-              {session.nombre_sesion}
+            <SelectItem key={session.id} value={session.nombre_sesion} className="flex items-center">
+              <div className="flex items-center w-full">
+                <Circle 
+                  className={`h-3 w-3 mr-2 ${session.estado === 'CONECTADO' || session.estado === 'connected' ? 'text-green-500 fill-green-500' : 'text-yellow-500 fill-yellow-500'}`} 
+                />
+                {session.nombre_sesion}
+              </div>
             </SelectItem>
           ))}
         </SelectContent>
