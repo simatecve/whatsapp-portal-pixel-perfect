@@ -26,7 +26,7 @@ export function useWhatsAppGroups(selectedSession: string | null) {
     setError(null);
     
     try {
-      // Make sure we're using the correct API URL format with the session name
+      // Usando el formato correcto de URL API con el nombre de la sesión en la ruta
       const apiUrl = `https://api.ecnix.ai/api/${sessionId}/groups`;
       console.log('Fetching groups from:', apiUrl);
       
@@ -39,15 +39,40 @@ export function useWhatsAppGroups(selectedSession: string | null) {
       });
       
       if (!response.ok) {
-        throw new Error(`Error al obtener grupos: ${response.status}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        console.error('Error response al obtener grupos:', errorData);
+        throw new Error(`Error al obtener grupos: ${errorData.error || response.statusText} (${response.status})`);
       }
       
       const data = await response.json();
       console.log('Groups data received:', data);
       
-      // Ensure we're handling the response format correctly
-      const groupsArray = Array.isArray(data) ? data : Object.values(data);
-      setGroups(groupsArray);
+      // Transformar el objeto de grupos en un array de grupos
+      const formattedGroups = Object.values(data).map((group: any) => {
+        return {
+          id: group.id,
+          name: group.subject || 'Sin nombre',
+          owner: group.owner,
+          description: group.desc,
+          creation: group.creation ? new Date(group.creation * 1000).toISOString() : undefined,
+          participants_count: group.participants?.length,
+          participants: group.participants?.map((p: any) => ({
+            id: p.id,
+            name: p.id.split('@')[0],
+            admin: p.admin
+          })),
+          is_community: group.isCommunity
+        };
+      });
+      
+      console.log('Formatted groups:', formattedGroups);
+      setGroups(formattedGroups);
     } catch (err) {
       console.error('Error fetching WhatsApp groups:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al obtener grupos');

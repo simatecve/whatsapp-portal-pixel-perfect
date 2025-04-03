@@ -79,7 +79,7 @@ const GroupsList: React.FC<GroupsListProps> = ({ sessions, whatsappConfig }) => 
     sessions.length > 0 ? sessions[0].nombre_sesion : null
   );
   
-  const { groups, isLoading, refetch } = useWhatsAppGroups(selectedSession);
+  const { groups, isLoading, refetch, error } = useWhatsAppGroups(selectedSession);
   
   const handleSessionChange = (sessionName: string) => {
     setSelectedSession(sessionName);
@@ -124,9 +124,15 @@ const GroupsList: React.FC<GroupsListProps> = ({ sessions, whatsappConfig }) => 
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center h-64">
-          <p className="text-gray-500">No se encontraron grupos para esta sesión.</p>
-          {selectedSession && (
-            <p className="text-gray-400 text-sm">Intenta refrescar o seleccionar otra sesión.</p>
+          {error ? (
+            <p className="text-red-500">{error}</p>
+          ) : (
+            <>
+              <p className="text-gray-500">No se encontraron grupos para esta sesión.</p>
+              {selectedSession && (
+                <p className="text-gray-400 text-sm">Intenta refrescar o seleccionar otra sesión.</p>
+              )}
+            </>
           )}
         </div>
       )}
