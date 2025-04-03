@@ -20,11 +20,13 @@ import SidebarLogo from '@/components/dashboard/SidebarLogo';
 import UserProfilePanel from '@/components/dashboard/UserProfilePanel';
 import TopNavbar from '@/components/dashboard/TopNavbar';
 
-// Componentes nuevos
+// Componentes de WhatsApp
 import SessionCard from '@/components/whatsapp/SessionCard';
 import CreateSessionModal from '@/components/whatsapp/CreateSessionModal';
 import QRCodeModal from '@/components/whatsapp/QRCodeModal';
+import ContactsList from '@/components/whatsapp/ContactsList';
 import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface SystemConfig {
   id: string;
@@ -52,6 +54,7 @@ const WhatsApp: React.FC = () => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedSessionName, setSelectedSessionName] = useState<string | null>(null);
   const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('sessions');
   
   // Usar el hook personalizado para manejar las sesiones de WhatsApp
   const {
@@ -243,24 +246,45 @@ const WhatsApp: React.FC = () => {
             </div>
             
             <div className="px-4 sm:px-0 mt-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {sessions.length > 0 ? (
-                  sessions.map((session) => (
-                    <SessionCard 
-                      key={session.id}
-                      session={session}
-                      handleConnectQR={handleConnectQR}
-                      handleDeleteSession={handleDeleteSession}
-                      formatDate={formatDate}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-12">
-                    <p className="text-gray-500">No tiene sesiones de WhatsApp conectadas.</p>
-                    <p className="text-gray-500 text-sm mt-2">Haga clic en "Conectar WhatsApp" para comenzar.</p>
+              <Tabs
+                defaultValue="sessions"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="mb-4">
+                  <TabsTrigger value="sessions">Sesiones</TabsTrigger>
+                  <TabsTrigger value="contacts">Contactos</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="sessions">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {sessions.length > 0 ? (
+                      sessions.map((session) => (
+                        <SessionCard 
+                          key={session.id}
+                          session={session}
+                          handleConnectQR={handleConnectQR}
+                          handleDeleteSession={handleDeleteSession}
+                          formatDate={formatDate}
+                        />
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-12">
+                        <p className="text-gray-500">No tiene sesiones de WhatsApp conectadas.</p>
+                        <p className="text-gray-500 text-sm mt-2">Haga clic en "Conectar WhatsApp" para comenzar.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="contacts">
+                  <ContactsList 
+                    sessions={sessions}
+                    whatsappConfig={whatsappConfig}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </SidebarInset>
