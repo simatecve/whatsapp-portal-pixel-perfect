@@ -27,39 +27,26 @@ interface WebhookConfig {
   session_name: string;
   webhook_url: string;
   events: string[];
-  hmac_key: string | null;
-  retry_attempts: number;
-  retry_delay_seconds: number;
-  retry_policy: string;
 }
 
 interface FormInputs {
   session_name: string;
   webhook_url: string;
   events: string[];
-  hmac_key: string;
-  retry_attempts: number;
-  retry_delay_seconds: number;
-  retry_policy: string;
 }
 
 const AVAILABLE_EVENTS = [
-  { id: 'message', label: 'Mensaje' },
-  { id: 'message.ack', label: 'Confirmación de mensaje' },
-  { id: 'message.update', label: 'Actualización de mensaje' },
-  { id: 'message.delete', label: 'Eliminación de mensaje' },
-  { id: 'message.reaction', label: 'Reacción a mensaje' },
-  { id: 'session.status', label: 'Estado de sesión' },
-  { id: 'group.join', label: 'Unión a grupo' },
-  { id: 'group.leave', label: 'Salida de grupo' },
-  { id: 'presence.update', label: 'Actualización de presencia' },
-  { id: 'call', label: 'Llamada' },
-  { id: 'poll.response', label: 'Respuesta a encuesta' }
-];
-
-const RETRY_POLICIES = [
-  { value: 'linear', label: 'Lineal' },
-  { value: 'exponential', label: 'Exponencial' }
+  { id: 'message', label: 'message' },
+  { id: 'message.ack', label: 'message.ack' },
+  { id: 'message.update', label: 'message.update' },
+  { id: 'message.delete', label: 'message.delete' },
+  { id: 'message.reaction', label: 'message.reaction' },
+  { id: 'session.status', label: 'session.status' },
+  { id: 'group.join', label: 'group.join' },
+  { id: 'group.leave', label: 'group.leave' },
+  { id: 'presence.update', label: 'presence.update' },
+  { id: 'call', label: 'call' },
+  { id: 'poll.response', label: 'poll.response' }
 ];
 
 const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) => {
@@ -69,10 +56,6 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
       session_name: '',
       webhook_url: '',
       events: [],
-      hmac_key: '',
-      retry_attempts: 15,
-      retry_delay_seconds: 2,
-      retry_policy: 'linear'
     }
   });
 
@@ -105,13 +88,7 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
       // Create the webhook configuration exactly according to the API format
       const webhookConfig = {
         url: data.webhook_url,
-        events: data.events,
-        hmac: data.hmac_key ? { key: data.hmac_key } : undefined,
-        retries: {
-          delaySeconds: data.retry_delay_seconds,
-          attempts: data.retry_attempts,
-          policy: data.retry_policy
-        }
+        events: data.events
       };
       
       const response = await fetch(apiUrl, {
@@ -187,51 +164,8 @@ const WebhookForm = ({ webhook, sessions, onSuccess, user }: WebhookFormProps) =
         </div>
 
         <div>
-          <Label>HMAC Key (opcional)</Label>
-          <Input {...register('hmac_key')} placeholder="Clave secreta para HMAC" />
-        </div>
-
-        <div>
-          <Label>Número de reintentos</Label>
-          <Input
-            type="number"
-            {...register('retry_attempts')}
-            defaultValue={15}
-          />
-        </div>
-
-        <div>
-          <Label>Intervalo de reintento (segundos)</Label>
-          <Input
-            type="number"
-            {...register('retry_delay_seconds')}
-            defaultValue={2}
-          />
-        </div>
-
-        <div>
-          <Label>Política de reintentos</Label>
-          <Select
-            {...register('retry_policy')}
-            onValueChange={(value) => setValue('retry_policy', value)}
-            defaultValue={webhook?.retry_policy || 'linear'}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Seleccione una política" />
-            </SelectTrigger>
-            <SelectContent>
-              {RETRY_POLICIES.map((policy) => (
-                <SelectItem key={policy.value} value={policy.value}>
-                  {policy.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
           <Label className="mb-2 block">Eventos</Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-48 overflow-y-auto">
             {AVAILABLE_EVENTS.map((event) => (
               <div key={event.id} className="flex items-center space-x-2">
                 <Checkbox
