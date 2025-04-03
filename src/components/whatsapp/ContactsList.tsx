@@ -67,12 +67,8 @@ const ContactsList: React.FC<ContactsListProps> = ({
   
   useEffect(() => {
     // Auto-select first active session if available and no external session is set
-    const activeSessions = sessions.filter(s => 
-      s.estado === 'CONECTADO' || s.estado === 'WORKING'
-    );
-    
-    if (activeSessions.length > 0 && !effectiveSelectedSession && externalSelectedSession === null) {
-      setSelectedSession(activeSessions[0].nombre_sesion);
+    if (sessions.length > 0 && !effectiveSelectedSession && externalSelectedSession === null) {
+      setSelectedSession(sessions[0].nombre_sesion);
     }
   }, [sessions, effectiveSelectedSession, externalSelectedSession]);
   
@@ -85,25 +81,30 @@ const ContactsList: React.FC<ContactsListProps> = ({
       
       try {
         console.log(`Fetching contacts for session: ${effectiveSelectedSession}`);
-        console.log(`API URL: ${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`);
+        const apiUrl = `${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`;
+        console.log(`API URL: ${apiUrl}`);
         
-        const response = await fetch(
-          `${whatsappConfig.api_url}/api/contacts/all?session=${effectiveSelectedSession}`,
-          {
-            method: 'GET',
-            headers: {
-              'accept': '*/*',
-              'Content-Type': 'application/json',
-              'X-Api-Key': whatsappConfig.api_key
-            }
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'X-Api-Key': whatsappConfig.api_key
           }
-        );
+        });
+        
+        console.log('Response status:', response.status);
         
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch (e) {
+            errorData = { error: errorText };
+          }
           console.error('Error response:', errorData);
-          const errorMessage = errorData.error || response.statusText;
-          throw new Error(`Error al obtener contactos: ${errorMessage} (${response.status})`);
+          throw new Error(`Error al obtener contactos: ${errorData.error || response.statusText} (${response.status})`);
         }
         
         const data = await response.json();
@@ -115,9 +116,10 @@ const ContactsList: React.FC<ContactsListProps> = ({
         }
         
         setContacts(data);
+        toast.success(`${data.length} contactos cargados correctamente`);
       } catch (error) {
-        console.error('Error al obtener contactos:', error);
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        console.error('Error al obtener contactos:', errorMessage);
         setError(errorMessage);
         toast.error(`Error al obtener contactos: ${errorMessage}`);
         setContacts([]);
@@ -157,7 +159,7 @@ const ContactsList: React.FC<ContactsListProps> = ({
           
           <SessionSelector 
             sessions={sessions}
-            selectedSession={selectedSession}
+            selectedSession={effectiveSelectedSession}
             onSessionChange={handleSessionChange}
             showSessionDropdown={showSessionDropdown}
           />

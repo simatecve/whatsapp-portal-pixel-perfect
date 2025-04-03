@@ -34,6 +34,8 @@ export const useContactos = (user: User | null) => {
       
       try {
         setError(null);
+        console.log('Fetching WhatsApp sessions and config...');
+        
         // Get WhatsApp sessions
         const { data: sessionsData, error: sessionsError } = await supabase
           .from('whatsapp_sesiones')
@@ -41,7 +43,12 @@ export const useContactos = (user: User | null) => {
           .eq('user_id', user.id)
           .order('fecha_creacion', { ascending: false });
           
-        if (sessionsError) throw sessionsError;
+        if (sessionsError) {
+          console.error('Error fetching sessions:', sessionsError);
+          throw sessionsError;
+        }
+        
+        console.log('Sessions fetched:', sessionsData);
         setSessions(sessionsData || []);
         
         // Get WhatsApp configuration
@@ -50,7 +57,12 @@ export const useContactos = (user: User | null) => {
           .select('*')
           .single();
           
-        if (configError) throw configError;
+        if (configError) {
+          console.error('Error fetching config:', configError);
+          throw configError;
+        }
+        
+        console.log('Config fetched:', configData);
         
         if (configData) {
           setWhatsappConfig({
@@ -60,9 +72,9 @@ export const useContactos = (user: User | null) => {
           });
         }
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error al obtener datos:', error);
-        setError('Error al obtener datos de WhatsApp');
+        setError('Error al obtener datos de WhatsApp: ' + (error.message || 'Desconocido'));
       } finally {
         setIsLoading(false);
       }
