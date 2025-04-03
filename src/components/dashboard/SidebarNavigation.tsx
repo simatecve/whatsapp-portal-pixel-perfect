@@ -152,15 +152,6 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
         </SidebarMenuItem>
         
         <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip="Configuración" isActive={isActive('/configuracion')}>
-            <Link to="/configuracion">
-              <Settings className="h-5 w-5" />
-              <span>Configuración</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        
-        <SidebarMenuItem>
           <SidebarMenuButton asChild tooltip="Integraciones" isActive={isActive('/integraciones')}>
             <Link to="/integraciones">
               <Webhook className="h-5 w-5" />
@@ -171,6 +162,15 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
       </SidebarMenu>
       
       <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild tooltip="Configuración" isActive={isActive('/configuracion')}>
+            <Link to="/configuracion">
+              <Settings className="h-5 w-5" />
+              <span>Configuración</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
         <SidebarMenuItem>
           <SidebarMenuButton tooltip="Ayuda">
             <HelpCircle className="h-5 w-5" />

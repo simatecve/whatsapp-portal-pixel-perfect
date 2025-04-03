@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { User } from '@supabase/supabase-js';
+import { Link } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 
 type UserProfilePanelProps = {
   profile: any;
@@ -23,6 +25,9 @@ const UserProfilePanel: React.FC<UserProfilePanelProps> = ({ profile, user }) =>
             <p className="text-xs text-muted-foreground">{profile.nombre_empresa}</p>
           )}
         </div>
+        <Link to="/configuracion" className="ml-auto" title="Editar perfil">
+          <Settings className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+        </Link>
       </div>
     </div>
   );

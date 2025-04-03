@@ -45,6 +45,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mensajes: {
+        Row: {
+          created_at: string
+          id: number
+          mensaje: string | null
+          mensaje_referencia: string | null
+          nombre_sesion: string | null
+          numero_whatsapp: string | null
+          participant: string | null
+          pushName: string | null
+          quien_envia: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          mensaje?: string | null
+          mensaje_referencia?: string | null
+          nombre_sesion?: string | null
+          numero_whatsapp?: string | null
+          participant?: string | null
+          pushName?: string | null
+          quien_envia?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          mensaje?: string | null
+          mensaje_referencia?: string | null
+          nombre_sesion?: string | null
+          numero_whatsapp?: string | null
+          participant?: string | null
+          pushName?: string | null
+          quien_envia?: string | null
+        }
+        Relationships: []
+      }
       perfiles: {
         Row: {
           codigo_pais: string | null
