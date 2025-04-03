@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/table';
 import { User2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { User } from '@supabase/supabase-js';
 
 interface WhatsAppSession {
   id: string;
@@ -43,14 +45,29 @@ interface WhatsAppContact {
 }
 
 interface ContactsListProps {
-  sessions: WhatsAppSession[];
-  whatsappConfig: {
+  sessions?: WhatsAppSession[];
+  whatsappConfig?: {
     api_key: string;
     api_url: string;
   } | null;
+  user?: User | null;
+  standalone?: boolean;
 }
 
-const ContactsList: React.FC<ContactsListProps> = ({ sessions, whatsappConfig }) => {
+const ContactsList: React.FC<ContactsListProps> = ({ 
+  sessions: propSessions, 
+  whatsappConfig: propWhatsappConfig,
+  user,
+  standalone = false
+}) => {
+  const { sessions: hookSessions, whatsappConfig: hookWhatsappConfig, isLoading: hookIsLoading } = 
+    standalone && user ? useWhatsAppSessions(user) : { sessions: [], whatsappConfig: null, isLoading: false };
+  
+  // Use the provided sessions or the ones from the hook
+  const sessions = standalone ? hookSessions : (propSessions || []);
+  const whatsappConfig = standalone ? hookWhatsappConfig : propWhatsappConfig;
+  const isLoadingSessions = standalone && hookIsLoading;
+  
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -109,6 +126,22 @@ const ContactsList: React.FC<ContactsListProps> = ({ sessions, whatsappConfig })
   const handleSessionChange = (value: string) => {
     setSelectedSession(value);
   };
+
+  if (isLoadingSessions) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <CardTitle>Cargando sesiones...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="w-full">

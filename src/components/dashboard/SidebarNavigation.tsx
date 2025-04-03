@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
-  LogOut, HelpCircle, Phone
+  LogOut, HelpCircle, Phone, Contact
 } from 'lucide-react';
 import { 
   SidebarMenu, SidebarMenuItem, SidebarMenuButton
@@ -54,7 +54,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
         <SidebarMenuItem>
           <SidebarMenuButton asChild tooltip="Contactos" isActive={isActive('/contactos')}>
             <Link to="/contactos">
-              <Users className="h-5 w-5" />
+              <Contact className="h-5 w-5" />
               <span>Contactos</span>
             </Link>
           </SidebarMenuButton>
