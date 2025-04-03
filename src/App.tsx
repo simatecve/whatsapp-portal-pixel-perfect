@@ -13,6 +13,7 @@ import Contactos from "./pages/Contactos";
 import Grupos from "./pages/Grupos";
 import Integraciones from "./pages/Integraciones";
 import ApiDocs from "./pages/ApiDocs";
+import Configuracion from "./pages/Configuracion";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => {
             <Route path="/grupos" element={<Grupos />} />
             <Route path="/integraciones" element={<Integraciones />} />
             <Route path="/api-docs" element={<ApiDocs />} />
+            <Route path="/configuracion" element={<Configuracion />} />
             {/* AÑADE TODAS LAS RUTAS PERSONALIZADAS ARRIBA DE LA RUTA CATCH-ALL "*" */}
             <Route path="*" element={<NotFound />} />
           </Routes>
