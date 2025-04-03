@@ -39,7 +39,7 @@ export function useWhatsAppGroups(selectedSession: string | null) {
       }
       
       const data = await response.json();
-      setGroups(data);
+      setGroups(Object.values(data));
     } catch (err) {
       console.error('Error fetching WhatsApp groups:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al obtener grupos');
