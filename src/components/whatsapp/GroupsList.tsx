@@ -1,13 +1,11 @@
 
-import React from 'react';
-import { WhatsAppGroup } from '@/hooks/useWhatsAppGroups';
+import React, { useState } from 'react';
+import { WhatsAppGroup, useWhatsAppGroups } from '@/hooks/useWhatsAppGroups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useWhatsAppGroups } from '@/hooks/useWhatsAppGroups';
 import { RefreshCcw, UserCheck, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type GroupsListProps = {
   sessions: Array<{
@@ -64,7 +62,7 @@ const GroupsLoading = () => (
 );
 
 const GroupsList: React.FC<GroupsListProps> = ({ sessions, whatsappConfig }) => {
-  const [selectedSession, setSelectedSession] = React.useState<string | null>(
+  const [selectedSession, setSelectedSession] = useState<string | null>(
     sessions.length > 0 ? sessions[0].nombre_sesion : null
   );
   
