@@ -6,6 +6,8 @@ import StatsPanel from './StatsPanel';
 import RecentActivity from './RecentActivity';
 import QuickActions from './QuickActions';
 import { supabase } from '@/integrations/supabase/client';
+import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { toast } from '@/hooks/use-toast';
 
 type DashboardContentProps = {
   systemName: string | undefined;
@@ -19,9 +21,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
     responseRate: 0,
     apiUsage: 0
   });
-  const [sessions, setSessions] = useState([]);
-  const [recentMessages, setRecentMessages] = useState([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch WhatsApp session data using the custom hook
+  const { sessions } = useWhatsAppSessions(userId ? { id: userId } : null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -29,53 +33,54 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
       
       try {
         if (userId) {
-          // Fetch WhatsApp sessions
-          const { data: sessionsData, error: sessionsError } = await supabase
-            .from('whatsapp_sesiones')
-            .select('*')
-            .eq('user_id', userId)
-            .order('fecha_creacion', { ascending: false });
-            
-          if (sessionsError) {
-            console.error('Error fetching sessions:', sessionsError);
-          } else {
-            setSessions(sessionsData || []);
-            
-            // Calculate stats based on sessions
-            setStats(prev => ({
-              ...prev,
-              activeUsers: sessionsData?.filter(s => s.estado === 'CONECTADO').length || 0
-            }));
-          }
-          
-          // Fetch recent messages
+          // Fetch recent messages with more details
           const { data: messagesData, error: messagesError } = await supabase
             .from('mensajes')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(5);
+            .limit(10);
             
           if (messagesError) {
             console.error('Error fetching messages:', messagesError);
+            toast({
+              title: "Error",
+              description: "No se pudieron cargar los mensajes recientes",
+              variant: "destructive"
+            });
           } else {
             setRecentMessages(messagesData || []);
             
-            // Update message count stat
-            setStats(prev => ({
-              ...prev,
-              totalMessages: messagesData ? messagesData.length : 0
-            }));
+            // Update total messages count stat
+            const { count, error: countError } = await supabase
+              .from('mensajes')
+              .select('*', { count: 'exact', head: true });
+              
+            if (!countError) {
+              setStats(prev => ({
+                ...prev,
+                totalMessages: count || 0
+              }));
+            }
           }
           
-          // Set demo stats for the remaining metrics
+          // Calculate active sessions
+          const activeSessionsCount = sessions?.filter(s => s.estado === 'CONECTADO').length || 0;
+          
+          // Update stats with real data
           setStats(prev => ({
             ...prev,
-            responseRate: 92,
-            apiUsage: 64
+            activeUsers: activeSessionsCount,
+            responseRate: calculateResponseRate(messagesData || []),
+            apiUsage: calculateApiUsage(sessions?.length || 0, 5) // Assuming 5 is max allowed sessions
           }));
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "Ocurrió un error al cargar los datos del dashboard",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -94,7 +99,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
         // Update recent messages when new message arrives
         setRecentMessages(prevMessages => {
           const newMessages = [payload.new, ...prevMessages];
-          return newMessages.slice(0, 5); // Keep only the 5 most recent
+          return newMessages.slice(0, 10); // Keep only the 10 most recent
         });
         
         // Update total message count
@@ -109,7 +114,21 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
     return () => {
       supabase.removeChannel(messagesChannel);
     };
-  }, [userId]);
+  }, [userId, sessions]);
+
+  // Helper function to calculate response rate based on messages
+  const calculateResponseRate = (messages: any[]): number => {
+    if (messages.length === 0) return 0;
+    
+    const outgoingMessages = messages.filter(m => m.quien_envia === 'bot').length;
+    return Math.round((outgoingMessages / messages.length) * 100);
+  };
+  
+  // Helper function to calculate API usage percentage
+  const calculateApiUsage = (current: number, max: number): number => {
+    if (max === 0) return 0;
+    return Math.round((current / max) * 100);
+  };
 
   return (
     <>
@@ -119,7 +138,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
         <DashboardHeader systemName={systemName} />
         <StatsPanel stats={stats} isLoading={isLoading} />
         <RecentActivity messages={recentMessages} isLoading={isLoading} />
-        <QuickActions sessions={sessions} />
+        <QuickActions sessions={sessions || []} />
       </div>
     </>
   );
