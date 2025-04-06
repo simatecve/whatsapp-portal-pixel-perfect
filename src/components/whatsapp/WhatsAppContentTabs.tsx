@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SessionsGrid from '@/components/whatsapp/SessionsGrid';
-import ContactsList from '@/components/whatsapp/ContactsList';
 
 interface WhatsAppSession {
   id: string;
@@ -13,16 +12,10 @@ interface WhatsAppSession {
   fecha_actualizacion: string;
 }
 
-interface WhatsAppConfig {
-  api_key: string;
-  api_url: string;
-}
-
 interface WhatsAppContentTabsProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
   sessions: WhatsAppSession[];
-  whatsappConfig: WhatsAppConfig | null;
   handleConnectQR: (sessionId: string, sessionName: string) => void;
   handleDeleteSession: (sessionId: string) => void;
   formatDate: (dateString: string) => string;
@@ -33,15 +26,10 @@ const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
   activeTab,
   setActiveTab,
   sessions,
-  whatsappConfig,
   handleConnectQR,
   handleDeleteSession,
-  formatDate,
-  activeSession
+  formatDate
 }) => {
-  // Get the active session name if available
-  const activeSessionName = activeSession?.nombre_sesion || null;
-
   return (
     <div className="px-4 sm:px-0 mt-6">
       <Tabs
@@ -52,7 +40,6 @@ const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
       >
         <TabsList className="mb-4">
           <TabsTrigger value="sessions">Sesiones</TabsTrigger>
-          <TabsTrigger value="contacts">Contactos</TabsTrigger>
         </TabsList>
         
         <TabsContent value="sessions">
@@ -61,14 +48,6 @@ const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
             handleConnectQR={handleConnectQR}
             handleDeleteSession={handleDeleteSession}
             formatDate={formatDate}
-          />
-        </TabsContent>
-        
-        <TabsContent value="contacts">
-          <ContactsList 
-            sessions={sessions}
-            whatsappConfig={whatsappConfig}
-            selectedSession={activeSessionName}
           />
         </TabsContent>
       </Tabs>

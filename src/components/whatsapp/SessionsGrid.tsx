@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import SessionCard from '@/components/whatsapp/SessionCard';
+import { toast } from '@/hooks/use-toast';
 
 interface WhatsAppSession {
   id: string;
@@ -24,6 +25,21 @@ const SessionsGrid: React.FC<SessionsGridProps> = ({
   handleDeleteSession,
   formatDate
 }) => {
+  // Log the sessions data for debugging
+  useEffect(() => {
+    console.log('SessionsGrid received sessions:', sessions);
+  }, [sessions]);
+
+  // Show toast if no sessions found
+  useEffect(() => {
+    if (sessions && sessions.length === 0) {
+      toast({
+        title: "Sin sesiones",
+        description: "No tiene sesiones de WhatsApp conectadas. Haga clic en 'Conectar WhatsApp' para comenzar.",
+      });
+    }
+  }, [sessions]);
+
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {sessions && sessions.length > 0 ? (

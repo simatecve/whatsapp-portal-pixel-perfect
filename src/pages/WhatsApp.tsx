@@ -29,7 +29,6 @@ const WhatsApp: React.FC = () => {
     refreshSessionStatus,
     createWhatsAppSession,
     deleteWhatsAppSession,
-    activeSession,
     qrCodeImage,
     isLoadingQR,
     qrErrorMessage,
@@ -52,16 +51,22 @@ const WhatsApp: React.FC = () => {
   } = useWhatsAppModals(loadQRCode, createWhatsAppSession, refreshSessionStatus);
 
   // Tab management
-  const { activeTab, setActiveTab } = useWhatsAppTabs(activeSession);
+  const { activeTab, setActiveTab } = useWhatsAppTabs();
 
   // Fetch sessions on load
   useEffect(() => {
-    if (user && sessions.length === 0 && !isLoading) {
+    if (user && !isLoading) {
+      console.log('Refreshing WhatsApp sessions for user:', user.id);
       refreshSessionStatus().catch(err => {
         console.error('Error refreshing session status:', err);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las sesiones de WhatsApp",
+          variant: "destructive"
+        });
       });
     }
-  }, [user, sessions, isLoading]);
+  }, [user, isLoading]);
 
   // Utility function for formatting dates
   const formatDate = (dateString: string) => {
@@ -79,9 +84,9 @@ const WhatsApp: React.FC = () => {
   // Log sessions information for debugging
   useEffect(() => {
     console.log('Current sessions:', sessions);
-    console.log('Active session:', activeSession);
     console.log('Loading state:', isLoading);
-  }, [sessions, activeSession, isLoading]);
+    console.log('WhatsApp config:', whatsappConfig);
+  }, [sessions, isLoading, whatsappConfig]);
 
   return (
     <WhatsAppPageLayout 
@@ -104,7 +109,6 @@ const WhatsApp: React.FC = () => {
         handleConnectQR={handleConnectQR}
         handleDeleteSession={deleteWhatsAppSession}
         formatDate={formatDate}
-        activeSession={activeSession}
       />
 
       <CreateSessionModal

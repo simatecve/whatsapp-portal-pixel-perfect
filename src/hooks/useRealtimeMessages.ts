@@ -17,6 +17,12 @@ export const useRealtimeMessages = ({ onNewMessage, userId }: UseRealtimeMessage
   useEffect(() => {
     if (!userId) return;
     
+    // Clean up existing channel if any
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    
     // Set up real-time subscription for messages
     const channel = supabase
       .channel('messages-channel')
@@ -31,13 +37,16 @@ export const useRealtimeMessages = ({ onNewMessage, userId }: UseRealtimeMessage
         // Call the callback with the new message
         onNewMessage(newMessage);
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Supabase channel status:', status);
+      });
     
     // Store the channel reference
     channelRef.current = channel;
       
     // Clean up subscription
     return () => {
+      console.log('Cleaning up Supabase channel');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
