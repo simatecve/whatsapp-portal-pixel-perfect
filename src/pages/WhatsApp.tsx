@@ -1,42 +1,25 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
-import { useQRCodeManagement } from '@/hooks/whatsapp/useQRCodeManagement';
+import React from 'react';
 import WhatsAppPageLayout from '@/components/whatsapp/WhatsAppPageLayout';
 import WhatsAppPageHeader from '@/components/whatsapp/WhatsAppPageHeader';
 import WhatsAppContentTabs from '@/components/whatsapp/WhatsAppContentTabs';
 import CreateSessionModal from '@/components/whatsapp/CreateSessionModal';
 import QRCodeModal from '@/components/whatsapp/QRCodeModal';
-import { toast } from 'sonner';
-
-interface SystemConfig {
-  id: string;
-  nombre_sistema: string;
-  [key: string]: any;
-}
-
-interface UserProfile {
-  id: string;
-  nombre_completo: string | null;
-  [key: string]: any;
-}
+import { useUserAndSystemData } from '@/hooks/useUserAndSystemData';
+import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
+import { useWhatsAppModals } from '@/hooks/useWhatsAppModals';
+import { useWhatsAppTabs } from '@/hooks/useWhatsAppTabs';
 
 const WhatsApp: React.FC = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [newSessionName, setNewSessionName] = useState('');
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('sessions');
-  
+  // Load user and system data
+  const { 
+    user, 
+    profile, 
+    systemConfig, 
+    handleLogout 
+  } = useUserAndSystemData();
+
+  // WhatsApp sessions management
   const {
     sessions,
     whatsappConfig,
@@ -46,7 +29,6 @@ const WhatsApp: React.FC = () => {
     createWhatsAppSession,
     deleteWhatsAppSession,
     activeSession,
-    setActiveSession,
     qrCodeImage,
     isLoadingQR,
     qrErrorMessage,
@@ -54,106 +36,30 @@ const WhatsApp: React.FC = () => {
     loadQRCode,
     resetQRState,
   } = useWhatsAppSessions(user);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        
-        if (user) {
-          const { data: profileData } = await supabase
-            .from('perfiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          setProfile(profileData as UserProfile | null);
-        } else {
-          navigate('/login');
-        }
-        
-        const { data: configData } = await supabase
-          .from('configuracion_sistema')
-          .select('*')
-          .maybeSingle();
-          
-        setSystemConfig(configData as SystemConfig | null);
-      } catch (error) {
-        console.error('Error al obtener datos:', error);
-      }
-    };
-    
-    fetchData();
-  }, [navigate]);
 
-  // Switch to contacts tab if we have an active session
-  useEffect(() => {
-    if (activeSession && activeSession.estado === 'CONECTADO' && activeTab === 'sessions') {
-      setActiveTab('contacts');
-    }
-  }, [activeSession, activeTab]);
+  // Modal state management
+  const {
+    modalOpen,
+    setModalOpen,
+    newSessionName,
+    setNewSessionName,
+    showQrModal,
+    setShowQrModal,
+    handleConnectQR,
+    createSession,
+    handleConnectComplete
+  } = useWhatsAppModals(loadQRCode, createWhatsAppSession, refreshSessionStatus);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
-  
-  const createSession = async () => {
-    if (!newSessionName.trim()) {
-      toast({
-        title: "Error",
-        description: "Por favor, ingrese un nombre para la sesión",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      const result = await createWhatsAppSession(newSessionName);
-      
-      if (result.success) {
-        const qrResult = await loadQRCode(newSessionName);
-        
-        if (qrResult.success) {
-          setModalOpen(false);
-          setShowQrModal(true);
-          
-          toast({
-            title: "Sesión creada",
-            description: "Escanee el código QR para conectar su WhatsApp",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error en el proceso de creación:', error);
-    }
-  };
+  // Tab management
+  const { activeTab, setActiveTab } = useWhatsAppTabs(activeSession);
 
-  const handleConnectQR = async (sessionId: string, sessionName: string) => {
-    setSelectedSessionId(sessionId);
-    setShowQrModal(true);
-    await loadQRCode(sessionName);
-  };
-
-  const handleDeleteSession = async (sessionId: string) => {
-    await deleteWhatsAppSession(sessionId);
-  };
-
-  const handleConnectComplete = async () => {
-    setShowQrModal(false);
-    resetQRState();
-    
-    setTimeout(async () => {
-      await refreshSessionStatus();
-    }, 2000);
-  };
-
+  // Utility function for formatting dates
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString();
   };
 
+  // Function to retry loading QR code
   const retryQRCode = async () => {
     if (selectedSessionName) {
       await loadQRCode(selectedSessionName);
@@ -179,7 +85,7 @@ const WhatsApp: React.FC = () => {
         sessions={sessions}
         whatsappConfig={whatsappConfig}
         handleConnectQR={handleConnectQR}
-        handleDeleteSession={handleDeleteSession}
+        handleDeleteSession={deleteWhatsAppSession}
         formatDate={formatDate}
         activeSession={activeSession}
       />
