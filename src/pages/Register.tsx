@@ -33,11 +33,11 @@ const Register: React.FC = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-background">Cargando...</div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Left side - Image/Banner for larger screens, will be bottom on mobile */}
       <div 
         className="hidden md:flex md:flex-1 bg-whatsapp relative overflow-hidden"
@@ -113,7 +113,7 @@ const Register: React.FC = () => {
                   <path d="M12 6L11.06 11.06L6 12L11.06 12.94L12 18L12.94 12.94L18 12L12.94 11.06L12 6Z" />
                 </svg>
               )}
-              <span className="ml-2 text-xl font-bold">{configSistema?.nombre_sistema || "WhatsAPI"}</span>
+              <span className="ml-2 text-xl font-bold text-foreground">{configSistema?.nombre_sistema || "WhatsAPI"}</span>
             </Link>
           </div>
           <RegisterForm />

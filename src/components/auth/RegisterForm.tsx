@@ -119,12 +119,12 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md space-y-6 p-8 bg-white rounded-xl shadow-lg animate-fade-in">
+    <div className="w-full max-w-md space-y-6 p-8 bg-card rounded-xl shadow-lg animate-fade-in">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-foreground">
           {configSistema ? "Crear una cuenta en " + configSistema.nombre_sistema : "Crear una cuenta"}
         </h2>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-muted-foreground mt-2">
           {configSistema?.descripcion_registro || "Comience a gestionar su API de WhatsApp"}
         </p>
       </div>
@@ -159,7 +159,7 @@ const RegisterForm: React.FC = () => {
       </form>
       
       <div className="text-center text-sm">
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           ¿Ya tienes una cuenta?{" "}
           <Link to="/login" className="text-whatsapp font-medium hover:underline">
             Iniciar sesión

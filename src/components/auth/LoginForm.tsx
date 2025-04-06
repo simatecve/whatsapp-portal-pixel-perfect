@@ -52,10 +52,10 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md space-y-6 p-8 bg-white rounded-xl shadow-lg animate-fade-in">
+    <div className="w-full max-w-md space-y-6 p-8 bg-card rounded-xl shadow-lg animate-fade-in">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Bienvenido de nuevo</h2>
-        <p className="text-sm text-gray-500 mt-2">Accede a tu panel de WhatsAPI</p>
+        <h2 className="text-2xl font-bold text-foreground">Bienvenido de nuevo</h2>
+        <p className="text-sm text-muted-foreground mt-2">Accede a tu panel de WhatsAPI</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -63,7 +63,7 @@ const LoginForm: React.FC = () => {
           <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
+              <Mail className="h-5 w-5 text-muted-foreground" />
             </div>
             <Input 
               id="email" 
@@ -86,7 +86,7 @@ const LoginForm: React.FC = () => {
           </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+              <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
             <Input 
               id="password" 
@@ -103,8 +103,8 @@ const LoginForm: React.FC = () => {
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
               {showPassword ? 
-                <EyeOff className="h-5 w-5 text-gray-400" /> : 
-                <Eye className="h-5 w-5 text-gray-400" />
+                <EyeOff className="h-5 w-5 text-muted-foreground" /> : 
+                <Eye className="h-5 w-5 text-muted-foreground" />
               }
             </button>
           </div>
@@ -120,7 +120,7 @@ const LoginForm: React.FC = () => {
       </form>
       
       <div className="text-center text-sm">
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           ¿No tienes una cuenta?{" "}
           <Link to="/register" className="text-whatsapp font-medium hover:underline">
             Crear cuenta
