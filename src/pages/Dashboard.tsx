@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
@@ -15,6 +16,7 @@ import UserProfilePanel from '@/components/dashboard/UserProfilePanel';
 import SidebarNavigation from '@/components/dashboard/SidebarNavigation';
 import SidebarLogo from '@/components/dashboard/SidebarLogo';
 import DashboardContent from '@/components/dashboard/DashboardContent';
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -34,36 +36,78 @@ const Dashboard: React.FC = () => {
     // Obtener datos del usuario actual y configuración del sistema
     const fetchData = async () => {
       try {
+        setIsLoading(true);
+        
         // Obtener usuario
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
         
         if (user) {
           // Obtener perfil del usuario
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('perfiles')
             .select('*')
             .eq('id', user.id)
             .maybeSingle();
           
-          setProfile(profileData);
+          if (profileError) {
+            console.error('Error al obtener perfil:', profileError);
+            toast({
+              title: "Error",
+              description: "No se pudo cargar el perfil del usuario",
+              variant: "destructive"
+            });
+          } else {
+            setProfile(profileData);
+          }
         }
         
         // Obtener configuración del sistema
-        const { data: configData } = await supabase
+        const { data: configData, error: configError } = await supabase
           .from('configuracion_sistema')
           .select('*')
           .maybeSingle();
           
-        setSystemConfig(configData);
+        if (configError) {
+          console.error('Error al obtener configuración:', configError);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la configuración del sistema",
+            variant: "destructive"
+          });
+        } else {
+          setSystemConfig(configData);
+        }
       } catch (error) {
         console.error('Error al obtener datos:', error);
+        toast({
+          title: "Error",
+          description: "Ha ocurrido un error al cargar los datos",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchData();
+    
+    // Set up realtime subscription for system configuration changes
+    const configChannel = supabase
+      .channel('public:configuracion_sistema')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'configuracion_sistema' 
+      }, (payload) => {
+        setSystemConfig(payload.new);
+      })
+      .subscribe();
+      
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(configChannel);
+    };
   }, [isAuthenticated, navigate]);
 
   const handleLogout = async () => {
@@ -73,7 +117,7 @@ const Dashboard: React.FC = () => {
   
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-gray-50">
+      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
         <Sidebar>
           <SidebarHeader>
@@ -96,7 +140,10 @@ const Dashboard: React.FC = () => {
         
         {/* Main Content */}
         <SidebarInset>
-          <DashboardContent systemName={systemConfig?.nombre_sistema} />
+          <DashboardContent 
+            systemName={systemConfig?.nombre_sistema}
+            userId={user?.id}
+          />
         </SidebarInset>
       </div>
     </SidebarProvider>

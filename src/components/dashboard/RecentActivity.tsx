@@ -1,47 +1,108 @@
 
 import React from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { MessageSquare, User, Calendar } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const RecentActivity: React.FC = () => {
+interface Message {
+  id: number;
+  mensaje: string | null;
+  nombre_sesion: string | null;
+  numero_whatsapp: string | null;
+  pushName: string | null;
+  created_at: string;
+  quien_envia: string | null;
+}
+
+interface RecentActivityProps {
+  messages: Message[];
+  isLoading: boolean;
+}
+
+const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) => {
+  const formatDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { 
+        addSuffix: true,
+        locale: es
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Fecha desconocida';
+    }
+  };
+
+  const truncateMessage = (message: string | null, maxLength = 60) => {
+    if (!message) return 'Sin contenido';
+    return message.length > maxLength ? `${message.substring(0, maxLength)}...` : message;
+  };
+
   return (
     <div className="mt-8 px-4 sm:px-0">
       <h2 className="text-lg font-medium text-gray-900">Actividad Reciente</h2>
-      <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {[1, 2, 3, 4, 5].map((item) => (
-            <li key={item}>
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-whatsapp truncate">
-                    Nuevo mensaje recibido del Usuario #{item}
-                  </p>
-                  <div className="ml-2 flex-shrink-0 flex">
-                    <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      Entregado
-                    </p>
+      <div className="mt-4 bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+        {isLoading ? (
+          // Loading skeleton
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {[1, 2, 3, 4, 5].map((item) => (
+              <li key={item} className="px-4 py-4 sm:px-6">
+                <div className="flex flex-col space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
                   </div>
                 </div>
-                <div className="mt-2 sm:flex sm:justify-between">
-                  <div className="sm:flex">
-                    <p className="flex items-center text-sm text-gray-500">
-                      <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                      Juan Pérez
+              </li>
+            ))}
+          </ul>
+        ) : messages.length > 0 ? (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {messages.map((message) => (
+              <li key={message.id}>
+                <div className="px-4 py-4 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-primary truncate flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
+                      {truncateMessage(message.mensaje)}
                     </p>
+                    <div className="ml-2 flex-shrink-0 flex">
+                      <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        {message.quien_envia === 'user' ? 'Recibido' : 'Enviado'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                    <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    <p>
-                      <time dateTime="2020-01-07">7 de Enero, 2020</time>
-                    </p>
+                  <div className="mt-2 sm:flex sm:justify-between">
+                    <div className="sm:flex">
+                      <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <User className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                        {message.pushName || message.numero_whatsapp || 'Usuario desconocido'}
+                        {message.nombre_sesion && (
+                          <span className="ml-2 text-xs text-gray-400">
+                            ({message.nombre_sesion})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
+                      <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <p>
+                        {formatDate(message.created_at)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="px-4 py-5 text-center text-gray-500 dark:text-gray-400">
+            <MessageSquare className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+            <h3 className="mt-2 text-sm font-medium">No hay mensajes recientes</h3>
+            <p className="mt-1 text-sm">Cuando reciba mensajes, aparecerán aquí.</p>
+          </div>
+        )}
       </div>
     </div>
   );
