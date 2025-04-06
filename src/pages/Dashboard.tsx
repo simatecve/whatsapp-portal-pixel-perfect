@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
     
     // Set up realtime subscription for system configuration changes
     const configChannel = supabase
-      .channel('public:configuracion_sistema')
+      .channel('config-channel')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 

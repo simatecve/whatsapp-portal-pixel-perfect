@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import TopNavbar from './TopNavbar';
 import DashboardHeader from './DashboardHeader';
 import StatsPanel from './StatsPanel';
@@ -23,6 +23,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
   });
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const messagesChannelRef = useRef<any>(null);
   
   // Fetch WhatsApp session data using the custom hook
   const { sessions } = useWhatsAppSessions(userId ? { id: userId } as any : null);
@@ -88,31 +89,35 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
     
     fetchDashboardData();
     
-    // Set up real-time subscription for messages
-    const messagesChannel = supabase
-      .channel('public:mensajes')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'mensajes' 
-      }, (payload) => {
-        // Update recent messages when new message arrives
-        setRecentMessages(prevMessages => {
-          const newMessages = [payload.new, ...prevMessages];
-          return newMessages.slice(0, 10); // Keep only the 10 most recent
-        });
-        
-        // Update total message count
-        setStats(prev => ({
-          ...prev,
-          totalMessages: prev.totalMessages + 1
-        }));
-      })
-      .subscribe();
+    // Set up real-time subscription for messages - only if it doesn't exist yet
+    if (!messagesChannelRef.current) {
+      messagesChannelRef.current = supabase
+        .channel('messages-channel')
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'mensajes' 
+        }, (payload) => {
+          // Update recent messages when new message arrives
+          setRecentMessages(prevMessages => {
+            const newMessages = [payload.new, ...prevMessages];
+            return newMessages.slice(0, 10); // Keep only the 10 most recent
+          });
+          
+          // Update total message count
+          setStats(prev => ({
+            ...prev,
+            totalMessages: prev.totalMessages + 1
+          }));
+        })
+        .subscribe();
+    }
       
     // Clean up subscription
     return () => {
-      supabase.removeChannel(messagesChannel);
+      if (messagesChannelRef.current) {
+        supabase.removeChannel(messagesChannelRef.current);
+      }
     };
   }, [userId, sessions]);
 

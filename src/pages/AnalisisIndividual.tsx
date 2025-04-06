@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,7 @@ const AnalisisIndividual: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [systemConfig, setSystemConfig] = useState<any>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const configChannelRef = useRef<any>(null);
   
   // En el futuro, esto estaría conectado a la autenticación de Supabase
   const isAuthenticated = true; // Placeholder para verificación de autenticación
@@ -97,6 +98,27 @@ const AnalisisIndividual: React.FC = () => {
     };
     
     fetchData();
+    
+    // Set up realtime subscription for system configuration changes - only if it doesn't exist yet
+    if (!configChannelRef.current) {
+      configChannelRef.current = supabase
+        .channel('config-analytics-channel')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'configuracion_sistema' 
+        }, (payload) => {
+          setSystemConfig(payload.new);
+        })
+        .subscribe();
+    }
+      
+    // Clean up subscription
+    return () => {
+      if (configChannelRef.current) {
+        supabase.removeChannel(configChannelRef.current);
+      }
+    };
   }, [isAuthenticated, navigate]);
 
   // Configurar la sesión seleccionada inicialmente
