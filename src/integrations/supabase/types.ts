@@ -18,6 +18,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nombre_sistema: string
+          support_url: string
           texto_bienvenida_login: string
           texto_bienvenida_registro: string
         }
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre_sistema?: string
+          support_url?: string
           texto_bienvenida_login?: string
           texto_bienvenida_registro?: string
         }
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre_sistema?: string
+          support_url?: string
           texto_bienvenida_login?: string
           texto_bienvenida_registro?: string
         }

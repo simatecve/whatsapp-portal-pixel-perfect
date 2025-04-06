@@ -23,29 +23,40 @@ type SidebarNavigationProps = {
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) => {
   const location = useLocation();
   const [apiKey, setApiKey] = useState<string>('');
+  const [supportUrl, setSupportUrl] = useState<string>('https://help.ecnix.ai');
   
   useEffect(() => {
-    const fetchApiKey = async () => {
+    const fetchConfig = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch API key
+        const { data: apiData, error: apiError } = await supabase
           .from('whatsapp_config')
           .select('api_key')
           .single();
         
-        if (error) {
-          console.error('Error fetching API key:', error);
-          return;
+        if (apiError) {
+          console.error('Error fetching API key:', apiError);
+        } else if (apiData) {
+          setApiKey(apiData.api_key);
         }
         
-        if (data) {
-          setApiKey(data.api_key);
+        // Fetch support URL
+        const { data: configData, error: configError } = await supabase
+          .from('configuracion_sistema')
+          .select('support_url')
+          .single();
+          
+        if (configError) {
+          console.error('Error fetching support URL:', configError);
+        } else if (configData) {
+          setSupportUrl(configData.support_url);
         }
       } catch (error) {
-        console.error('Error in API key fetch:', error);
+        console.error('Error in config fetch:', error);
       }
     };
     
-    fetchApiKey();
+    fetchConfig();
   }, []);
   
   const isActive = (path: string) => {
@@ -54,6 +65,10 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
 
   const openApiDocs = () => {
     window.open('https://swagger.ecnix.ai/', '_blank', 'noopener,noreferrer');
+  };
+
+  const openSupportPage = () => {
+    window.open(supportUrl, '_blank', 'noopener,noreferrer');
   };
 
   const copyApiKey = () => {
@@ -191,7 +206,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
         </SidebarMenuItem>
         
         <SidebarMenuItem>
-          <SidebarMenuButton tooltip="Ayuda">
+          <SidebarMenuButton onClick={openSupportPage} tooltip="Ayuda">
             <HelpCircle className="h-5 w-5" />
             <span>Ayuda</span>
           </SidebarMenuButton>
