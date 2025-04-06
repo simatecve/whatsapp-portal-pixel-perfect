@@ -20,7 +20,8 @@ const AnalisisIndividual: React.FC = () => {
   const configChannelRef = useRef<any>(null);
   
   // Obtenemos las sesiones de WhatsApp del usuario
-  const { sessions, isLoading: loadingSessions, error: sessionsError } = useWhatsAppSessions(user);
+  const { sessions, isLoading: loadingSessions } = useWhatsAppSessions(user);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
   
   useEffect(() => {
     // Obtener datos del usuario actual y configuración del sistema

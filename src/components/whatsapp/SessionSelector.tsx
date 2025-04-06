@@ -31,7 +31,7 @@ const SessionSelector: React.FC<SessionSelectorProps> = ({
   onSessionChange, 
   showSessionDropdown = true 
 }) => {
-  // Filter only active sessions
+  // Filter only active sessions (now including WORKING as active)
   const activeSessions = sessions.filter(s => 
     s.estado === 'CONECTADO' || s.estado === 'WORKING' || s.estado === 'connected'
   );
@@ -54,7 +54,7 @@ const SessionSelector: React.FC<SessionSelectorProps> = ({
             <SelectItem key={session.id} value={session.nombre_sesion} className="flex items-center">
               <div className="flex items-center w-full">
                 <Circle 
-                  className={`h-3 w-3 mr-2 ${session.estado === 'CONECTADO' || session.estado === 'connected' ? 'text-green-500 fill-green-500' : 'text-yellow-500 fill-yellow-500'}`} 
+                  className={`h-3 w-3 mr-2 ${session.estado === 'CONECTADO' || session.estado === 'connected' || session.estado === 'WORKING' ? 'text-green-500 fill-green-500' : 'text-yellow-500 fill-yellow-500'}`} 
                 />
                 {session.nombre_sesion}
               </div>

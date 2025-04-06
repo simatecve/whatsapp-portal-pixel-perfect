@@ -21,8 +21,8 @@ const SessionsOverview: React.FC<SessionsOverviewProps> = ({ sessions, isLoading
   // Use useMemo to avoid unnecessary re-calculations
   const { connectedSessions, pendingSessions, disconnectedSessions } = useMemo(() => {
     // Group sessions by status
-    const connected = sessions.filter(s => s.estado === 'CONECTADO');
-    const pending = sessions.filter(s => s.estado === 'PENDIENTE' || s.estado === 'WORKING');
+    const connected = sessions.filter(s => s.estado === 'CONECTADO' || s.estado === 'WORKING' || s.estado === 'connected');
+    const pending = sessions.filter(s => s.estado === 'PENDIENTE');
     const disconnected = sessions.filter(s => s.estado === 'DESCONECTADO');
     
     return {
@@ -89,14 +89,14 @@ const SessionsOverview: React.FC<SessionsOverviewProps> = ({ sessions, isLoading
                       <Badge 
                         variant="outline" 
                         className={`ml-2 ${
-                          session.estado === 'CONECTADO' 
+                          session.estado === 'CONECTADO' || session.estado === 'WORKING' || session.estado === 'connected'
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : session.estado === 'PENDIENTE' || session.estado === 'WORKING'
+                            : session.estado === 'PENDIENTE'
                             ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                         }`}
                       >
-                        {session.estado}
+                        {session.estado === 'WORKING' ? 'CONECTADO' : session.estado}
                       </Badge>
                     </li>
                   ))}
