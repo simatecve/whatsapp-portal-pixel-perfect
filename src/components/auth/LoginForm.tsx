@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,18 @@ const LoginForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/dashboard');
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -30,11 +42,17 @@ const LoginForm: React.FC = () => {
         throw error;
       }
 
-      toast({
-        title: "¡Éxito!",
-        description: "Has iniciado sesión correctamente.",
-      });
-      navigate('/dashboard');
+      console.log("Login successful, session:", data.session);
+      
+      if (data.session) {
+        toast({
+          title: "¡Éxito!",
+          description: "Has iniciado sesión correctamente.",
+        });
+        navigate('/dashboard');
+      } else {
+        throw new Error("No se pudo iniciar sesión. No se creó la sesión.");
+      }
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error);
       toast({
@@ -52,18 +70,18 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md space-y-6 p-8 bg-card rounded-xl shadow-lg animate-fade-in">
+    <div className="w-full max-w-md space-y-6 p-8 bg-card rounded-xl shadow-lg animate-fade-in dark:bg-gray-800">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground">Bienvenido de nuevo</h2>
-        <p className="text-sm text-muted-foreground mt-2">Accede a tu panel de WhatsAPI</p>
+        <h2 className="text-2xl font-bold text-foreground dark:text-white">Bienvenido de nuevo</h2>
+        <p className="text-sm text-muted-foreground mt-2 dark:text-gray-300">Accede a tu panel de WhatsAPI</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
+          <Label htmlFor="email" className="text-sm font-medium dark:text-gray-200">Correo electrónico</Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-muted-foreground" />
+              <Mail className="h-5 w-5 text-muted-foreground dark:text-gray-400" />
             </div>
             <Input 
               id="email" 
@@ -71,7 +89,7 @@ const LoginForm: React.FC = () => {
               placeholder="nombre@empresa.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10"
+              className="pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
           </div>
@@ -79,14 +97,14 @@ const LoginForm: React.FC = () => {
         
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
-            <Link to="/forgot-password" className="text-xs text-whatsapp hover:underline">
+            <Label htmlFor="password" className="text-sm font-medium dark:text-gray-200">Contraseña</Label>
+            <Link to="/forgot-password" className="text-xs text-whatsapp hover:underline dark:text-green-400">
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-muted-foreground" />
+              <Lock className="h-5 w-5 text-muted-foreground dark:text-gray-400" />
             </div>
             <Input 
               id="password" 
@@ -94,7 +112,7 @@ const LoginForm: React.FC = () => {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10"
+              className="pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
             <button 
@@ -103,8 +121,8 @@ const LoginForm: React.FC = () => {
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
               {showPassword ? 
-                <EyeOff className="h-5 w-5 text-muted-foreground" /> : 
-                <Eye className="h-5 w-5 text-muted-foreground" />
+                <EyeOff className="h-5 w-5 text-muted-foreground dark:text-gray-400" /> : 
+                <Eye className="h-5 w-5 text-muted-foreground dark:text-gray-400" />
               }
             </button>
           </div>
@@ -120,9 +138,9 @@ const LoginForm: React.FC = () => {
       </form>
       
       <div className="text-center text-sm">
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground dark:text-gray-300">
           ¿No tienes una cuenta?{" "}
-          <Link to="/register" className="text-whatsapp font-medium hover:underline">
+          <Link to="/register" className="text-whatsapp font-medium hover:underline dark:text-green-400">
             Crear cuenta
           </Link>
         </p>

@@ -1,5 +1,6 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import SidebarNavigation from '@/components/dashboard/SidebarNavigation';
 import SidebarLogo from '@/components/dashboard/SidebarLogo';
@@ -13,6 +14,7 @@ import {
   SidebarHeader, 
   SidebarRail 
 } from '@/components/ui/sidebar';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SystemConfig {
   id: string;
@@ -41,6 +43,26 @@ const WhatsAppPageLayout: React.FC<WhatsAppPageLayoutProps> = ({
   systemConfig,
   handleLogout
 }) => {
+  const navigate = useNavigate();
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log("WhatsAppPageLayout: No session found, redirecting to login");
+        navigate('/login');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+  
+  // If no user is available, don't render content
+  if (!user) {
+    return null;
+  }
+  
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-gray-50">

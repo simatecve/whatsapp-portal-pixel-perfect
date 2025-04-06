@@ -1,15 +1,24 @@
 
 import React, { useEffect, useState } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 const Login: React.FC = () => {
   const [configSistema, setConfigSistema] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const cargarConfiguracion = async () => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/dashboard');
+        return;
+      }
+      
+      // If not logged in, load system configuration
       try {
         const { data, error } = await supabase
           .from('configuracion_sistema')
@@ -29,15 +38,15 @@ const Login: React.FC = () => {
       }
     };
     
-    cargarConfiguracion();
-  }, []);
+    checkSession();
+  }, [navigate]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Cargando...</div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-900 text-white">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-md">
@@ -55,7 +64,7 @@ const Login: React.FC = () => {
                   <path d="M12 6L11.06 11.06L6 12L11.06 12.94L12 18L12.94 12.94L18 12L12.94 11.06L12 6Z" />
                 </svg>
               )}
-              <span className="ml-2 text-xl font-bold text-foreground">{configSistema?.nombre_sistema || "WhatsAPI"}</span>
+              <span className="ml-2 text-xl font-bold text-white">{configSistema?.nombre_sistema || "WhatsAPI"}</span>
             </Link>
           </div>
           <LoginForm />

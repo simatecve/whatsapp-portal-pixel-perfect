@@ -1,7 +1,6 @@
 
-import { Button } from "@/components/ui/button";
-import { Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
@@ -9,32 +8,30 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Comprobar si hay una sesión activa
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    // Escuchar cambios en el estado de autenticación
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
+      (_event, currentSession) => {
+        console.log("Index: Auth state changed", _event);
+        setSession(currentSession);
         setLoading(false);
       }
     );
+    
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Index: Initial session check", currentSession?.user?.id);
+      setSession(currentSession);
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirigir al dashboard si el usuario está autenticado
+  // Show loading indicator
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Cargando...</div>;
   }
 
-  if (session) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Redirigir directamente a la página de login
-  return <Navigate to="/login" replace />;
+  // Redirect to dashboard if authenticated, otherwise to login
+  return session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
 }

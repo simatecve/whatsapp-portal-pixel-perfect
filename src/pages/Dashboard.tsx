@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import {
   SidebarProvider,
@@ -21,72 +21,98 @@ import { toast } from '@/hooks/use-toast';
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [systemConfig, setSystemConfig] = useState<any>(null);
   const configChannelRef = useRef<any>(null);
   const dataFetchedRef = useRef<boolean>(false);
   
-  // En el futuro, esto estaría conectado a la autenticación de Supabase
-  const isAuthenticated = true; // Placeholder para verificación de autenticación
-  
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.id);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        // If user logs out, redirect to login
+        if (event === 'SIGNED_OUT') {
+          navigate('/login');
+        }
+      }
+    );
     
-    // Prevenir múltiples fetch si ya se han cargado los datos
-    if (dataFetchedRef.current) return;
-    
-    // Obtener datos del usuario actual y configuración del sistema
+    // Fetch data only once
     const fetchData = async () => {
+      if (dataFetchedRef.current) return;
+      
       try {
         setIsLoading(true);
         
-        // Obtener usuario
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        // THEN check for existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (user) {
-          // Obtener perfil del usuario
-          const { data: profileData, error: profileError } = await supabase
-            .from('perfiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error al obtener perfil:', profileError);
-            toast({
-              title: "Error",
-              description: "No se pudo cargar el perfil del usuario",
-              variant: "destructive"
-            });
-          } else {
-            setProfile(profileData);
+        if (!currentSession) {
+          console.log("No session found, redirecting to login");
+          navigate('/login');
+          return;
+        }
+        
+        setSession(currentSession);
+        setUser(currentSession.user);
+        
+        // With setTimeout to avoid Supabase deadlock
+        setTimeout(async () => {
+          // Obtain profile information
+          if (currentSession.user) {
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .maybeSingle();
+              
+              if (profileError) {
+                console.error('Error al obtener perfil:', profileError);
+                toast({
+                  title: "Error",
+                  description: "No se pudo cargar el perfil del usuario",
+                  variant: "destructive"
+                });
+              } else {
+                setProfile(profileData);
+              }
+            } catch (error) {
+              console.error("Error fetching profile:", error);
+            }
           }
-        }
-        
-        // Obtener configuración del sistema
-        const { data: configData, error: configError } = await supabase
-          .from('configuracion_sistema')
-          .select('*')
-          .maybeSingle();
           
-        if (configError) {
-          console.error('Error al obtener configuración:', configError);
-          toast({
-            title: "Error",
-            description: "No se pudo cargar la configuración del sistema",
-            variant: "destructive"
-          });
-        } else {
-          setSystemConfig(configData);
-        }
-
-        // Marcar que los datos ya se han cargado
-        dataFetchedRef.current = true;
+          // Fetch system configuration
+          try {
+            const { data: configData, error: configError } = await supabase
+              .from('configuracion_sistema')
+              .select('*')
+              .maybeSingle();
+              
+            if (configError) {
+              console.error('Error al obtener configuración:', configError);
+              toast({
+                title: "Error",
+                description: "No se pudo cargar la configuración del sistema",
+                variant: "destructive"
+              });
+            } else {
+              setSystemConfig(configData);
+            }
+          } catch (error) {
+            console.error("Error fetching system config:", error);
+          }
+          
+          dataFetchedRef.current = true;
+          setIsLoading(false);
+        }, 0);
+        
       } catch (error) {
         console.error('Error al obtener datos:', error);
         toast({
@@ -94,7 +120,6 @@ const Dashboard: React.FC = () => {
           description: "Ha ocurrido un error al cargar los datos",
           variant: "destructive"
         });
-      } finally {
         setIsLoading(false);
       }
     };
@@ -117,16 +142,45 @@ const Dashboard: React.FC = () => {
       
     // Clean up subscription
     return () => {
+      subscription.unsubscribe();
       if (configChannelRef.current) {
         supabase.removeChannel(configChannelRef.current);
       }
     };
-  }, [isAuthenticated, navigate]);
+  }, [navigate]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error during logout:", error);
+        toast({
+          title: "Error al cerrar sesión",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error("Exception during logout:", error);
+    }
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-700 rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!session) {
+    return null; // Will be redirected by the useEffect hook
+  }
   
   return (
     <SidebarProvider defaultOpen={true}>
