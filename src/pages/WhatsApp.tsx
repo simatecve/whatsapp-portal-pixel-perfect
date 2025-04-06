@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
@@ -10,6 +11,7 @@ import WhatsAppPageHeader from '@/components/whatsapp/WhatsAppPageHeader';
 import WhatsAppContentTabs from '@/components/whatsapp/WhatsAppContentTabs';
 import CreateSessionModal from '@/components/whatsapp/CreateSessionModal';
 import QRCodeModal from '@/components/whatsapp/QRCodeModal';
+import { toast } from 'sonner';
 
 interface SystemConfig {
   id: string;
@@ -43,17 +45,16 @@ const WhatsApp: React.FC = () => {
     refreshSessionStatus,
     createWhatsAppSession,
     deleteWhatsAppSession,
-  } = useWhatsAppSessions(user);
-  
-  const {
+    activeSession,
+    setActiveSession,
     qrCodeImage,
     isLoadingQR,
     qrErrorMessage,
     selectedSessionName,
     loadQRCode,
-    resetQRState
-  } = useQRCodeManagement(whatsappConfig);
-
+    resetQRState,
+  } = useWhatsAppSessions(user);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -85,6 +86,13 @@ const WhatsApp: React.FC = () => {
     
     fetchData();
   }, [navigate]);
+
+  // Switch to contacts tab if we have an active session
+  useEffect(() => {
+    if (activeSession && activeSession.estado === 'CONECTADO' && activeTab === 'sessions') {
+      setActiveTab('contacts');
+    }
+  }, [activeSession, activeTab]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -173,6 +181,7 @@ const WhatsApp: React.FC = () => {
         handleConnectQR={handleConnectQR}
         handleDeleteSession={handleDeleteSession}
         formatDate={formatDate}
+        activeSession={activeSession}
       />
 
       <CreateSessionModal

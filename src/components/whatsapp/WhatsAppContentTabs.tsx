@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SessionsGrid from '@/components/whatsapp/SessionsGrid';
 import ContactsList from '@/components/whatsapp/ContactsList';
@@ -26,6 +26,7 @@ interface WhatsAppContentTabsProps {
   handleConnectQR: (sessionId: string, sessionName: string) => void;
   handleDeleteSession: (sessionId: string) => void;
   formatDate: (dateString: string) => string;
+  activeSession?: WhatsAppSession | null;
 }
 
 const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
@@ -35,8 +36,12 @@ const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
   whatsappConfig,
   handleConnectQR,
   handleDeleteSession,
-  formatDate
+  formatDate,
+  activeSession
 }) => {
+  // Get the active session name if available
+  const activeSessionName = activeSession?.nombre_sesion || null;
+
   return (
     <div className="px-4 sm:px-0 mt-6">
       <Tabs
@@ -63,6 +68,7 @@ const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
           <ContactsList 
             sessions={sessions}
             whatsappConfig={whatsappConfig}
+            selectedSession={activeSessionName}
           />
         </TabsContent>
       </Tabs>

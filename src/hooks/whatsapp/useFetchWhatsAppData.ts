@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +22,7 @@ export const useFetchWhatsAppData = (user: User | null) => {
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
   const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSession, setActiveSession] = useState<WhatsAppSession | null>(null);
   
   useEffect(() => {
     const fetchSessions = async () => {
@@ -41,7 +41,23 @@ export const useFetchWhatsAppData = (user: User | null) => {
           return;
         }
         
-        setSessions(sessionsData as WhatsAppSession[] || []);
+        const typedSessions = sessionsData as WhatsAppSession[] || [];
+        setSessions(typedSessions);
+        
+        // Set active session - prioritize connected sessions
+        if (typedSessions.length > 0) {
+          // First try to find a connected session
+          const connectedSession = typedSessions.find(s => 
+            s.estado === 'CONECTADO' || s.estado === 'WORKING' || s.estado === 'connected'
+          );
+          
+          if (connectedSession) {
+            setActiveSession(connectedSession);
+          } else {
+            // Otherwise use the most recent session
+            setActiveSession(typedSessions[0]);
+          }
+        }
         
         // Fetch WhatsApp configuration
         const { data: configData, error: configError } = await supabase
@@ -65,5 +81,12 @@ export const useFetchWhatsAppData = (user: User | null) => {
     fetchSessions();
   }, [user]);
 
-  return { sessions, setSessions, whatsappConfig, isLoading };
+  return { 
+    sessions, 
+    setSessions, 
+    whatsappConfig, 
+    isLoading, 
+    activeSession, 
+    setActiveSession 
+  };
 };

@@ -8,7 +8,14 @@ import { useQRCodeManagement } from './whatsapp/useQRCodeManagement';
 
 export const useWhatsAppSessions = (user: User | null) => {
   // Fetch WhatsApp sessions and configuration
-  const { sessions, setSessions, whatsappConfig, isLoading } = useFetchWhatsAppData(user);
+  const { 
+    sessions, 
+    setSessions, 
+    whatsappConfig, 
+    isLoading,
+    activeSession,
+    setActiveSession
+  } = useFetchWhatsAppData(user);
   
   // Session status management
   const { refreshing, refreshSessionStatus } = useSessionStatusCheck(
@@ -55,6 +62,8 @@ export const useWhatsAppSessions = (user: User | null) => {
     selectedSessionName,
     loadQRCode,
     resetQRState,
-    getQRCodeForSession
+    getQRCodeForSession,
+    activeSession,
+    setActiveSession
   };
 };
