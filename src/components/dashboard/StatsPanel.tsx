@@ -43,7 +43,7 @@ const StatsPanel: React.FC<StatsProps> = memo(({ stats, isLoading }) => {
           </CardContent>
         </Card>
         
-        {/* Stat 2 - Active Users */}
+        {/* Stat 2 - Active Sessions */}
         <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-gray-500">Sesiones Activas</CardTitle>
@@ -55,12 +55,10 @@ const StatsPanel: React.FC<StatsProps> = memo(({ stats, isLoading }) => {
             ) : (
               <>
                 <div className="text-3xl font-bold text-primary">{stats.activeUsers}</div>
-                <p className="text-xs text-green-500 flex items-center mt-1">
-                  <svg className="w-3 h-3 mr-1" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 9L6 6L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M6 6V3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  +8,2% desde el mes pasado
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats.activeUsers === 1 
+                    ? "1 sesión conectada" 
+                    : `${stats.activeUsers} sesiones conectadas`}
                 </p>
               </>
             )}

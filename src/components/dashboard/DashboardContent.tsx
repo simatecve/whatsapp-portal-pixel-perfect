@@ -46,7 +46,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     if (!sessions) return;
     
     // Calculate active sessions
-    const activeSessionsCount = sessions.filter(s => s.estado === 'CONECTADO').length || 0;
+    const activeSessionsCount = sessions.filter(s => 
+      s.estado === 'CONECTADO' || 
+      s.estado === 'WORKING' || 
+      s.estado === 'connected'
+    ).length || 0;
+    
+    console.log('Active sessions count:', activeSessionsCount);
     
     // Update stats with real data
     setStats(prev => ({

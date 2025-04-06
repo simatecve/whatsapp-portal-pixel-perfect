@@ -12,6 +12,13 @@ interface WhatsAppSession {
   fecha_actualizacion: string;
 }
 
+interface WhatsAppConfig {
+  id: string;
+  api_key: string;
+  api_url: string;
+  webhook_url: string;
+}
+
 interface WhatsAppContentTabsProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
@@ -20,6 +27,7 @@ interface WhatsAppContentTabsProps {
   handleDeleteSession: (sessionId: string) => void;
   formatDate: (dateString: string) => string;
   activeSession?: WhatsAppSession | null;
+  whatsappConfig?: WhatsAppConfig | null;
 }
 
 const WhatsAppContentTabs: React.FC<WhatsAppContentTabsProps> = ({
