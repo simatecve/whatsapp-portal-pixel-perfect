@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface WhatsAppSession {
   id: string;
@@ -26,9 +28,13 @@ export const useFetchWhatsAppData = (user: User | null) => {
   
   useEffect(() => {
     const fetchSessions = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
       
       try {
+        console.log('Fetching WhatsApp sessions for user:', user.id);
         // Fetch WhatsApp sessions
         const { data: sessionsData, error: sessionsError } = await supabase
           .from('whatsapp_sesiones')
@@ -38,9 +44,16 @@ export const useFetchWhatsAppData = (user: User | null) => {
         
         if (sessionsError) {
           console.error('Error al obtener sesiones:', sessionsError);
+          toast({
+            title: "Error",
+            description: "No se pudieron cargar las sesiones de WhatsApp",
+            variant: "destructive"
+          });
+          setIsLoading(false);
           return;
         }
         
+        console.log('Sessions fetched:', sessionsData);
         const typedSessions = sessionsData as WhatsAppSession[] || [];
         setSessions(typedSessions);
         
@@ -67,12 +80,24 @@ export const useFetchWhatsAppData = (user: User | null) => {
         
         if (configError) {
           console.error('Error al obtener configuración:', configError);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la configuración de WhatsApp",
+            variant: "destructive"
+          });
+          setIsLoading(false);
           return;
         }
         
+        console.log('Config fetched:', configData);
         setWhatsappConfig(configData as WhatsAppConfig | null);
       } catch (error) {
         console.error('Error al obtener datos de WhatsApp:', error);
+        toast({
+          title: "Error",
+          description: "Ocurrió un error al cargar los datos de WhatsApp",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }

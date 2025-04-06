@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import WhatsAppPageLayout from '@/components/whatsapp/WhatsAppPageLayout';
 import WhatsAppPageHeader from '@/components/whatsapp/WhatsAppPageHeader';
 import WhatsAppContentTabs from '@/components/whatsapp/WhatsAppContentTabs';
@@ -9,6 +9,7 @@ import { useUserAndSystemData } from '@/hooks/useUserAndSystemData';
 import { useWhatsAppSessions } from '@/hooks/useWhatsAppSessions';
 import { useWhatsAppModals } from '@/hooks/useWhatsAppModals';
 import { useWhatsAppTabs } from '@/hooks/useWhatsAppTabs';
+import { toast } from '@/hooks/use-toast';
 
 const WhatsApp: React.FC = () => {
   // Load user and system data
@@ -53,6 +54,15 @@ const WhatsApp: React.FC = () => {
   // Tab management
   const { activeTab, setActiveTab } = useWhatsAppTabs(activeSession);
 
+  // Fetch sessions on load
+  useEffect(() => {
+    if (user && sessions.length === 0 && !isLoading) {
+      refreshSessionStatus().catch(err => {
+        console.error('Error refreshing session status:', err);
+      });
+    }
+  }, [user, sessions, isLoading]);
+
   // Utility function for formatting dates
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -65,6 +75,13 @@ const WhatsApp: React.FC = () => {
       await loadQRCode(selectedSessionName);
     }
   };
+
+  // Log sessions information for debugging
+  useEffect(() => {
+    console.log('Current sessions:', sessions);
+    console.log('Active session:', activeSession);
+    console.log('Loading state:', isLoading);
+  }, [sessions, activeSession, isLoading]);
 
   return (
     <WhatsAppPageLayout 
