@@ -26,7 +26,7 @@ const UserProfilePanel: React.FC<UserProfilePanelProps> = ({ profile, user }) =>
           )}
         </div>
         <Link to="/configuracion" className="ml-auto" title="Editar perfil">
-          <Settings className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+          <Settings className="h-4 w-4 text-muted-foreground hover:text-primary" />
         </Link>
       </div>
     </div>
