@@ -112,9 +112,12 @@ export const useDashboardData = (userId: string | null) => {
           schema: 'public', 
           table: 'mensajes' 
         }, (payload) => {
+          // Fix: Cast the payload.new to the DashboardMessage type
+          const newMessage = payload.new as DashboardMessage;
+          
           // Update recent messages when new message arrives
           setRecentMessages(prevMessages => {
-            const newMessages = [payload.new, ...prevMessages];
+            const newMessages = [newMessage, ...prevMessages];
             return newMessages.slice(0, 10); // Keep only the 10 most recent
           });
           
