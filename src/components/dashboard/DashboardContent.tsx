@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import UserWelcomeCard from './UserWelcomeCard';
 import SessionsOverview from './SessionsOverview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, BarChart, Clock } from 'lucide-react';
+import { Activity, BarChart } from 'lucide-react';
 
 type DashboardContentProps = {
   systemName: string | undefined;
@@ -36,72 +36,65 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const [messagesPerDay, setMessagesPerDay] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const messagesChannelRef = useRef<any>(null);
+  const dataFetchedRef = useRef<boolean>(false);
   
   // Fetch WhatsApp session data using the custom hook
   const { sessions } = useWhatsAppSessions(userId ? { id: userId } as any : null);
 
   useEffect(() => {
+    if (!userId || dataFetchedRef.current) return;
+    
     const fetchDashboardData = async () => {
       setIsLoading(true);
       
       try {
-        if (userId) {
-          // Fetch recent messages with more details
-          const { data: messagesData, error: messagesError } = await supabase
+        // Fetch recent messages with more details
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('mensajes')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (messagesError) {
+          console.error('Error fetching messages:', messagesError);
+          toast({
+            title: "Error",
+            description: "No se pudieron cargar los mensajes recientes",
+            variant: "destructive"
+          });
+        } else {
+          setRecentMessages(messagesData || []);
+          
+          // Update total messages count stat
+          const { count, error: countError } = await supabase
             .from('mensajes')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10);
+            .select('*', { count: 'exact', head: true });
             
-          if (messagesError) {
-            console.error('Error fetching messages:', messagesError);
-            toast({
-              title: "Error",
-              description: "No se pudieron cargar los mensajes recientes",
-              variant: "destructive"
-            });
-          } else {
-            setRecentMessages(messagesData || []);
-            
-            // Update total messages count stat
-            const { count, error: countError } = await supabase
-              .from('mensajes')
-              .select('*', { count: 'exact', head: true });
-              
-            if (!countError) {
-              setStats(prev => ({
-                ...prev,
-                totalMessages: count || 0
-              }));
-            }
-            
-            // Fetch messages per day for the last 7 days
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            
-            const { data: messagesPerDayData, error: messagesPerDayError } = await supabase
-              .from('mensajes')
-              .select('created_at')
-              .gte('created_at', sevenDaysAgo.toISOString());
-              
-            if (!messagesPerDayError && messagesPerDayData) {
-              // Process data for chart
-              const messagesByDay = groupMessagesByDay(messagesPerDayData);
-              setMessagesPerDay(messagesByDay);
-            }
+          if (!countError) {
+            setStats(prev => ({
+              ...prev,
+              totalMessages: count || 0
+            }));
           }
           
-          // Calculate active sessions
-          const activeSessionsCount = sessions?.filter(s => s.estado === 'CONECTADO').length || 0;
+          // Fetch messages per day for the last 7 days
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
           
-          // Update stats with real data
-          setStats(prev => ({
-            ...prev,
-            activeUsers: activeSessionsCount,
-            responseRate: calculateResponseRate(messagesData || []),
-            apiUsage: calculateApiUsage(sessions?.length || 0, 5) // Assuming 5 is max allowed sessions
-          }));
+          const { data: messagesPerDayData, error: messagesPerDayError } = await supabase
+            .from('mensajes')
+            .select('created_at')
+            .gte('created_at', sevenDaysAgo.toISOString());
+            
+          if (!messagesPerDayError && messagesPerDayData) {
+            // Process data for chart
+            const messagesByDay = groupMessagesByDay(messagesPerDayData);
+            setMessagesPerDay(messagesByDay);
+          }
         }
+        
+        // Marcar que los datos ya se han cargado
+        dataFetchedRef.current = true;
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
@@ -115,9 +108,27 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     };
     
     fetchDashboardData();
+  }, [userId]);
+  
+  // Actualizar stats cuando cambian las sesiones
+  useEffect(() => {
+    if (!sessions) return;
     
-    // Set up real-time subscription for messages - only if it doesn't exist yet
-    if (!messagesChannelRef.current) {
+    // Calculate active sessions
+    const activeSessionsCount = sessions.filter(s => s.estado === 'CONECTADO').length || 0;
+    
+    // Update stats with real data
+    setStats(prev => ({
+      ...prev,
+      activeUsers: activeSessionsCount,
+      responseRate: calculateResponseRate(recentMessages),
+      apiUsage: calculateApiUsage(sessions.length || 0, 5) // Assuming 5 is max allowed sessions
+    }));
+  }, [sessions, recentMessages]);
+  
+  // Set up real-time subscription for messages - only if it doesn't exist yet
+  useEffect(() => {
+    if (!messagesChannelRef.current && userId) {
       messagesChannelRef.current = supabase
         .channel('messages-channel')
         .on('postgres_changes', { 
@@ -159,9 +170,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     return () => {
       if (messagesChannelRef.current) {
         supabase.removeChannel(messagesChannelRef.current);
+        messagesChannelRef.current = null;
       }
     };
-  }, [userId, sessions]);
+  }, [userId]);
 
   // Helper function to calculate response rate based on messages
   const calculateResponseRate = (messages: any[]): number => {
@@ -216,13 +228,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         />
         
         {/* Stats Panel */}
-        <StatsPanel stats={stats} isLoading={isLoading} />
+        <StatsPanel stats={stats} isLoading={isLoading && !dataFetchedRef.current} />
         
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Sessions Overview */}
           <SessionsOverview 
             sessions={sessions || []} 
-            isLoading={isLoading} 
+            isLoading={isLoading && !dataFetchedRef.current} 
           />
           
           {/* Messages Timeline Card */}
@@ -234,7 +246,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
+              {isLoading && !dataFetchedRef.current ? (
                 <div className="h-64 w-full flex items-center justify-center">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-r-transparent rounded-full"></div>
                 </div>
@@ -247,7 +259,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
                         <div 
                           className="w-full max-w-[40px] bg-primary rounded-t hover:bg-primary/80 transition-all"
                           style={{ 
-                            height: `${Math.max((day.count / Math.max(...messagesPerDay.map(d => d.count))) * 100, 5)}%`,
+                            height: `${Math.max((day.count / Math.max(...messagesPerDay.map(d => d.count) || [1])) * 100, 5)}%`,
                             opacity: day.count === 0 ? 0.3 : 1
                           }}
                         ></div>
@@ -271,7 +283,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         </div>
         
         {/* Recent Activity */}
-        <RecentActivity messages={recentMessages} isLoading={isLoading} />
+        <RecentActivity messages={recentMessages} isLoading={isLoading && !dataFetchedRef.current} />
         
         {/* Quick Actions */}
         <QuickActions sessions={sessions || []} />

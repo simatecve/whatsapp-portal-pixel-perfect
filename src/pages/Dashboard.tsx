@@ -25,6 +25,7 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [systemConfig, setSystemConfig] = useState<any>(null);
   const configChannelRef = useRef<any>(null);
+  const dataFetchedRef = useRef<boolean>(false);
   
   // En el futuro, esto estaría conectado a la autenticación de Supabase
   const isAuthenticated = true; // Placeholder para verificación de autenticación
@@ -32,7 +33,11 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
+      return;
     }
+    
+    // Prevenir múltiples fetch si ya se han cargado los datos
+    if (dataFetchedRef.current) return;
     
     // Obtener datos del usuario actual y configuración del sistema
     const fetchData = async () => {
@@ -79,6 +84,9 @@ const Dashboard: React.FC = () => {
         } else {
           setSystemConfig(configData);
         }
+
+        // Marcar que los datos ya se han cargado
+        dataFetchedRef.current = true;
       } catch (error) {
         console.error('Error al obtener datos:', error);
         toast({
@@ -93,7 +101,7 @@ const Dashboard: React.FC = () => {
     
     fetchData();
     
-    // Set up realtime subscription for system configuration changes
+    // Set up realtime subscription for system configuration changes - solo una vez
     if (!configChannelRef.current) {
       configChannelRef.current = supabase
         .channel('config-channel')

@@ -20,7 +20,7 @@ interface SessionsOverviewProps {
 const SessionsOverview: React.FC<SessionsOverviewProps> = ({ sessions, isLoading }) => {
   // Group sessions by status
   const connectedSessions = sessions.filter(s => s.estado === 'CONECTADO');
-  const pendingSessions = sessions.filter(s => s.estado === 'PENDIENTE');
+  const pendingSessions = sessions.filter(s => s.estado === 'PENDIENTE' || s.estado === 'WORKING');
   const disconnectedSessions = sessions.filter(s => s.estado === 'DESCONECTADO');
   
   return (
@@ -82,7 +82,7 @@ const SessionsOverview: React.FC<SessionsOverviewProps> = ({ sessions, isLoading
                         className={`ml-2 ${
                           session.estado === 'CONECTADO' 
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : session.estado === 'PENDIENTE'
+                            : session.estado === 'PENDIENTE' || session.estado === 'WORKING'
                             ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                         }`}
