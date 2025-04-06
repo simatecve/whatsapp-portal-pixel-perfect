@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +24,7 @@ const Dashboard: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [systemConfig, setSystemConfig] = useState<any>(null);
+  const configChannelRef = useRef<any>(null);
   
   // En el futuro, esto estaría conectado a la autenticación de Supabase
   const isAuthenticated = true; // Placeholder para verificación de autenticación
@@ -93,20 +94,24 @@ const Dashboard: React.FC = () => {
     fetchData();
     
     // Set up realtime subscription for system configuration changes
-    const configChannel = supabase
-      .channel('config-channel')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'configuracion_sistema' 
-      }, (payload) => {
-        setSystemConfig(payload.new);
-      })
-      .subscribe();
+    if (!configChannelRef.current) {
+      configChannelRef.current = supabase
+        .channel('config-channel')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'configuracion_sistema' 
+        }, (payload) => {
+          setSystemConfig(payload.new);
+        })
+        .subscribe();
+    }
       
     // Clean up subscription
     return () => {
-      supabase.removeChannel(configChannel);
+      if (configChannelRef.current) {
+        supabase.removeChannel(configChannelRef.current);
+      }
     };
   }, [isAuthenticated, navigate]);
 
@@ -132,7 +137,10 @@ const Dashboard: React.FC = () => {
           </SidebarContent>
           
           <SidebarFooter>
-            {/* Footer content goes here if needed */}
+            <div className="p-3 text-xs text-muted-foreground">
+              <p>© {new Date().getFullYear()} {systemConfig?.nombre_sistema || 'Ecnix API'}</p>
+              <p className="mt-1">Versión 1.0.0</p>
+            </div>
           </SidebarFooter>
           
           <SidebarRail />
@@ -143,6 +151,8 @@ const Dashboard: React.FC = () => {
           <DashboardContent 
             systemName={systemConfig?.nombre_sistema}
             userId={user?.id}
+            profile={profile}
+            isLoading={isLoading}
           />
         </SidebarInset>
       </div>

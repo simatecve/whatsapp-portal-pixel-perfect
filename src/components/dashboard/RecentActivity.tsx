@@ -2,8 +2,9 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MessageSquare, User, Calendar } from 'lucide-react';
+import { MessageSquare, User, Calendar, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface Message {
   id: number;
@@ -39,9 +40,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) 
   };
 
   return (
-    <div className="mt-8 px-4 sm:px-0">
-      <h2 className="text-lg font-medium text-gray-900">Actividad Reciente</h2>
-      <div className="mt-4 bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+    <Card className="mt-8">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-medium flex items-center">
+          <MessageSquare className="mr-2 h-5 w-5 text-primary" />
+          Actividad Reciente
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         {isLoading ? (
           // Loading skeleton
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -61,14 +67,22 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) 
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {messages.map((message) => (
               <li key={message.id}>
-                <div className="px-4 py-4 sm:px-6">
+                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-primary truncate flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
+                      {message.quien_envia === 'user' ? (
+                        <ArrowDownLeft className="h-4 w-4 mr-2 flex-shrink-0 text-green-500" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 mr-2 flex-shrink-0 text-blue-500" />
+                      )}
                       {truncateMessage(message.mensaje)}
                     </p>
                     <div className="ml-2 flex-shrink-0 flex">
-                      <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <p className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        message.quien_envia === 'user' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      }`}>
                         {message.quien_envia === 'user' ? 'Recibido' : 'Enviado'}
                       </p>
                     </div>
@@ -103,8 +117,8 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) 
             <p className="mt-1 text-sm">Cuando reciba mensajes, aparecerán aquí.</p>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

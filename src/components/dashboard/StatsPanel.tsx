@@ -19,17 +19,17 @@ const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
     <div className="mt-4 px-4 sm:px-0">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Stat 1 - Total Messages */}
-        <Card>
+        <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-gray-500">Total Mensajes</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-7 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-bold">{stats.totalMessages.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-primary">{stats.totalMessages.toLocaleString()}</div>
                 <p className="text-xs text-green-500 flex items-center mt-1">
                   <svg className="w-3 h-3 mr-1" viewBox="0 0 12 12" fill="none">
                     <path d="M3 9L6 6L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -43,17 +43,17 @@ const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
         </Card>
         
         {/* Stat 2 - Active Users */}
-        <Card>
+        <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-gray-500">Sesiones Activas</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-7 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-bold">{stats.activeUsers}</div>
+                <div className="text-3xl font-bold text-primary">{stats.activeUsers}</div>
                 <p className="text-xs text-green-500 flex items-center mt-1">
                   <svg className="w-3 h-3 mr-1" viewBox="0 0 12 12" fill="none">
                     <path d="M3 9L6 6L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -67,17 +67,17 @@ const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
         </Card>
         
         {/* Stat 3 - Response Rate */}
-        <Card>
+        <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-gray-500">Tasa de Respuesta</CardTitle>
-            <PercentCircle className="h-4 w-4 text-muted-foreground" />
+            <PercentCircle className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-7 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-bold">{stats.responseRate}%</div>
+                <div className="text-3xl font-bold text-primary">{stats.responseRate}%</div>
                 <p className="text-xs text-red-500 flex items-center mt-1">
                   <svg className="w-3 h-3 mr-1 transform rotate-180" viewBox="0 0 12 12" fill="none">
                     <path d="M3 9L6 6L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -91,20 +91,32 @@ const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
         </Card>
         
         {/* Stat 4 - API Usage */}
-        <Card>
+        <Card className="border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-gray-500">Uso de API</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-7 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-bold">{stats.apiUsage}%</div>
+                <div className="text-3xl font-bold text-primary">{stats.apiUsage}%</div>
                 <p className="text-xs text-gray-500 mt-1">
                   del cupo mensual
                 </p>
+                <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
+                  <div 
+                    className={`h-full rounded-full ${
+                      stats.apiUsage < 50 
+                        ? 'bg-green-500' 
+                        : stats.apiUsage < 75 
+                        ? 'bg-yellow-500' 
+                        : 'bg-red-500'
+                    }`}
+                    style={{ width: `${stats.apiUsage}%` }}
+                  ></div>
+                </div>
               </>
             )}
           </CardContent>
