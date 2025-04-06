@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -18,10 +18,19 @@ interface SessionsOverviewProps {
 }
 
 const SessionsOverview: React.FC<SessionsOverviewProps> = ({ sessions, isLoading }) => {
-  // Group sessions by status
-  const connectedSessions = sessions.filter(s => s.estado === 'CONECTADO');
-  const pendingSessions = sessions.filter(s => s.estado === 'PENDIENTE' || s.estado === 'WORKING');
-  const disconnectedSessions = sessions.filter(s => s.estado === 'DESCONECTADO');
+  // Use useMemo to avoid unnecessary re-calculations
+  const { connectedSessions, pendingSessions, disconnectedSessions } = useMemo(() => {
+    // Group sessions by status
+    const connected = sessions.filter(s => s.estado === 'CONECTADO');
+    const pending = sessions.filter(s => s.estado === 'PENDIENTE' || s.estado === 'WORKING');
+    const disconnected = sessions.filter(s => s.estado === 'DESCONECTADO');
+    
+    return {
+      connectedSessions: connected,
+      pendingSessions: pending,
+      disconnectedSessions: disconnected
+    };
+  }, [sessions]);
   
   return (
     <Card>

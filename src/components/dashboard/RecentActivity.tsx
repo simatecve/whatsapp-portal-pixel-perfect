@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MessageSquare, User, Calendar, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
@@ -21,7 +21,8 @@ interface RecentActivityProps {
   isLoading: boolean;
 }
 
-const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) => {
+// Using memo to prevent unnecessary re-renders
+const RecentActivity: React.FC<RecentActivityProps> = memo(({ messages, isLoading }) => {
   const formatDate = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { 
@@ -120,6 +121,8 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ messages, isLoading }) 
       </CardContent>
     </Card>
   );
-};
+});
+
+RecentActivity.displayName = 'RecentActivity';
 
 export default RecentActivity;

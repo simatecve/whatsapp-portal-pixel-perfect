@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { MessageSquare, Users, PercentCircle, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +14,8 @@ interface StatsProps {
   isLoading: boolean;
 }
 
-const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
+// Using memo to prevent unnecessary re-renders
+const StatsPanel: React.FC<StatsProps> = memo(({ stats, isLoading }) => {
   return (
     <div className="mt-4 px-4 sm:px-0">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -124,6 +125,8 @@ const StatsPanel: React.FC<StatsProps> = ({ stats, isLoading }) => {
       </div>
     </div>
   );
-};
+});
+
+StatsPanel.displayName = 'StatsPanel';
 
 export default StatsPanel;
