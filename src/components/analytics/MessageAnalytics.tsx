@@ -10,6 +10,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 
 type MessageAnalyticsProps = {
   userId: string | undefined;
+  selectedSession: string | null;
 };
 
 type PushNameStats = {
@@ -19,51 +20,18 @@ type PushNameStats = {
   lastMessageDate: string;
 };
 
-const MessageAnalytics: React.FC<MessageAnalyticsProps> = ({ userId }) => {
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+const MessageAnalytics: React.FC<MessageAnalyticsProps> = ({ userId, selectedSession }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [messageStats, setMessageStats] = useState<PushNameStats[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  // Fetch all active sessions
-  useEffect(() => {
-    const fetchSessions = async () => {
-      if (!userId) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('whatsapp_sesiones')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('estado', 'CONECTADO');
-
-        if (error) {
-          console.error('Error fetching sessions:', error);
-          toast({
-            title: "Error",
-            description: "No se pudieron cargar las sesiones activas",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setSessions(data || []);
-        if (data && data.length > 0 && !selectedSession) {
-          setSelectedSession(data[0].nombre_sesion);
-        }
-      } catch (error) {
-        console.error('Error in session fetch:', error);
-      }
-    };
-
-    fetchSessions();
-  }, [userId, selectedSession]);
-
   // Fetch messages and analyze by pushName when session changes
   useEffect(() => {
     const fetchMessagesByPushName = async () => {
-      if (!selectedSession) return;
+      if (!selectedSession) {
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       try {
@@ -132,31 +100,11 @@ const MessageAnalytics: React.FC<MessageAnalyticsProps> = ({ userId }) => {
     fetchMessagesByPushName();
   }, [selectedSession]);
 
-  const handleSessionChange = (value: string) => {
-    setSelectedSession(value);
-  };
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle>Análisis de Mensajes por Usuario</CardTitle>
-            <div className="w-[250px]">
-              <Select value={selectedSession || ''} onValueChange={handleSessionChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar sesión" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sessions.map(session => (
-                    <SelectItem key={session.id} value={session.nombre_sesion}>
-                      {session.nombre_sesion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <CardTitle>Análisis de Mensajes por Usuario</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
