@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
@@ -40,16 +39,19 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
           setApiKey(apiData.api_key);
         }
         
-        // Fetch support URL
-        const { data: configData, error: configError } = await supabase
-          .from('configuracion_sistema')
-          .select('support_url')
-          .single();
-          
-        if (configError) {
-          console.error('Error fetching support URL:', configError);
-        } else if (configData) {
-          setSupportUrl(configData.support_url);
+        // Fetch support URL - handle as potentially non-existent column
+        try {
+          const { data: configData } = await supabase
+            .from('configuracion_sistema')
+            .select('support_url')
+            .maybeSingle();
+            
+          if (configData?.support_url) {
+            setSupportUrl(configData.support_url);
+          }
+        } catch (error) {
+          console.error('Error fetching support URL:', error);
+          // Keep default URL in state
         }
       } catch (error) {
         console.error('Error in config fetch:', error);
