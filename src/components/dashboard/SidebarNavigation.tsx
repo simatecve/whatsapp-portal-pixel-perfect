@@ -106,14 +106,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
           </SidebarMenuButton>
         </SidebarMenuItem>
         
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip="Mensajes" isActive={isActive('/mensajes')}>
-            <Link to="/mensajes">
-              <MessageSquare className="h-5 w-5" />
-              <span>Mensajes</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+        {/* Removed the Mensajes menu item here */}
         
         <SidebarMenuItem>
           <SidebarMenuButton asChild tooltip="Contactos" isActive={isActive('/contactos')}>
