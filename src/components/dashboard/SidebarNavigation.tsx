@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, MessageSquare, Settings, Users, BarChart2, 
-  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook, FileText, ExternalLink, Key
+  LogOut, HelpCircle, Phone, Contact, UsersRound, Webhook, FileText, ExternalLink, Key, ChevronDown
 } from 'lucide-react';
 import { 
   SidebarMenu, SidebarMenuItem, SidebarMenuButton
@@ -117,12 +117,31 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ handleLogout }) =
         </SidebarMenuItem>
         
         <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip="Analítica" isActive={isActive('/analitica')}>
-            <Link to="/analitica">
-              <BarChart2 className="h-5 w-5" />
-              <span>Analítica</span>
-            </Link>
-          </SidebarMenuButton>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton tooltip="Analítica" isActive={isActive('/analitica') || isActive('/analitica/individual')}>
+                <BarChart2 className="h-5 w-5" />
+                <span className="flex items-center justify-between w-full">
+                  Analítica
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </span>
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link to="/analitica" className="w-full">
+                  <BarChart2 className="h-4 w-4 mr-2" />
+                  General
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/analitica/individual" className="w-full">
+                  <Users className="h-4 w-4 mr-2" />
+                  Análisis Individual
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarMenuItem>
         
         <SidebarMenuItem>

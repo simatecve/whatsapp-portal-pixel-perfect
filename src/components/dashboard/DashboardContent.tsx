@@ -25,7 +25,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ systemName, userId 
   const [isLoading, setIsLoading] = useState(true);
   
   // Fetch WhatsApp session data using the custom hook
-  const { sessions } = useWhatsAppSessions(userId ? { id: userId } : null);
+  const { sessions } = useWhatsAppSessions(userId ? { id: userId } as any : null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {

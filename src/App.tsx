@@ -15,6 +15,7 @@ import Integraciones from "./pages/Integraciones";
 import ApiDocs from "./pages/ApiDocs";
 import Configuracion from "./pages/Configuracion";
 import NotFound from "./pages/NotFound";
+import AnalisisIndividual from "./pages/AnalisisIndividual";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => {
             <Route path="/integraciones" element={<Integraciones />} />
             <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="/configuracion" element={<Configuracion />} />
+            <Route path="/analitica/individual" element={<AnalisisIndividual />} />
             {/* AÑADE TODAS LAS RUTAS PERSONALIZADAS ARRIBA DE LA RUTA CATCH-ALL "*" */}
             <Route path="*" element={<NotFound />} />
           </Routes>
